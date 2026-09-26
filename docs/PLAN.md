@@ -12,12 +12,13 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 
 ### 1.1 Kullanım Modları
 
-| Mod | Açıklama | Referans |
-|---|---|---|
-| **Clip (Paylaşım)** | Metni/dosyayı yapıştır → "Kaydet" → 6 haneli kod + link + QR üret. Diğer cihaz kodu girip içeriği alır. Süre / tek okumalık / şifre seçenekleri. | codeshack |
-| **Room (Canlı Oda)** | İki veya daha fazla cihaz aynı oda koduna bağlanır. Birinin yapıştırdığı her şey diğerlerinde anında görünür (WebSocket). | copypaste.me |
+| Mod                  | Açıklama                                                                                                                                         | Referans     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| **Clip (Paylaşım)**  | Metni/dosyayı yapıştır → "Kaydet" → 6 haneli kod + link + QR üret. Diğer cihaz kodu girip içeriği alır. Süre / tek okumalık / şifre seçenekleri. | codeshack    |
+| **Room (Canlı Oda)** | İki veya daha fazla cihaz aynı oda koduna bağlanır. Birinin yapıştırdığı her şey diğerlerinde anında görünür (WebSocket).                        | copypaste.me |
 
 ### 1.2 Hedef Kullanıcılar
+
 - Kendi cihazları arasında hızlıca metin/link/şifre/kod parçası taşımak isteyenler
 - USB, e-posta, mesajlaşma uygulaması kullanmak istemeyen ya da kullanamayan (ortak/kurumsal bilgisayar) kişiler
 - Geliştiriciler (kod parçası, log, komut paylaşımı)
@@ -29,6 +30,7 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 ### 2.1 Fonksiyonel Gereksinimler
 
 **MVP (Faz 1)**
+
 - FR-01: Kullanıcı metin yapıştırıp kaydedebilmeli (maks. 100 KB metin).
 - FR-02: Kaydedilen içerik için benzersiz, kısa, okunabilir bir **kod** (ör. `K7P-4QX`) ve **paylaşım linki** üretilmeli.
 - FR-03: Kod girilerek veya link açılarak içerik görüntülenebilmeli.
@@ -40,6 +42,7 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 - FR-09: İçerik **istemci tarafında şifrelenmeli** (sunucu düz metni görmez).
 
 **v1 (Faz 2)**
+
 - FR-10: **Canlı oda** modu: oda oluştur / koda katıl, WebSocket ile gerçek zamanlı senkron.
 - FR-11: Odada bağlı cihaz sayısı ve "karşı taraf yazıyor/bağlandı" göstergesi.
 - FR-12: Oda geçmişi (odadaki son N öğe, oda süresi boyunca).
@@ -49,6 +52,7 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 - FR-16: Söz dizimi vurgulama (kod parçaları için) ve "düz metin / kod" seçimi.
 
 **v2 (Faz 3 – opsiyonel)**
+
 - FR-17: Opsiyonel hesap (e-posta magic link / OAuth) → kalıcı cihaz eşleştirme, geçmiş listesi.
 - FR-18: PWA: ana ekrana ekleme, Web Share Target (telefonda "Paylaş → ClipBoard").
 - FR-19: Tarayıcı eklentisi (Chrome/Firefox): seçili metni tek tıkla gönder.
@@ -57,17 +61,17 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 
 ### 2.2 Fonksiyonel Olmayan Gereksinimler
 
-| Kategori | Gereksinim |
-|---|---|
-| **Güvenlik** | AES-256-GCM ile istemci tarafı şifreleme; anahtar URL fragment'ında (`#key`) taşınır, sunucuya gitmez. HTTPS zorunlu, HSTS, sıkı CSP. |
-| **Gizlilik** | IP adresleri içerikle birlikte saklanmaz; loglar anonimleştirilir; KVKK/GDPR uyumlu gizlilik metni. |
-| **Performans** | Kaydetme/okuma p95 < 300 ms; canlı odada mesaj gecikmesi p95 < 200 ms. |
-| **Ölçeklenebilirlik** | Stateless API; WebSocket için Redis Pub/Sub ile yatay ölçekleme. |
-| **Erişilebilirlik** | WCAG 2.1 AA; klavye ile tam kullanım; ekran okuyucu etiketleri. |
-| **Uyumluluk** | Son 2 sürüm Chrome, Firefox, Safari, Edge; iOS Safari & Android Chrome. |
-| **Kullanılabilirlik** | Kayıt yok; ilk ekranda tek adımda paylaşım; mobil öncelikli tasarım. |
-| **Dayanıklılık** | %99.5 uptime hedefi; içerik geçici olduğu için yedekleme gereksiz, sadece konfigürasyon yedeklenir. |
-| **Kötüye kullanım** | IP bazlı rate limit, boyut limitleri, CAPTCHA (şüpheli trafikte), rapor/abuse formu. |
+| Kategori              | Gereksinim                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Güvenlik**          | AES-256-GCM ile istemci tarafı şifreleme; anahtar URL fragment'ında (`#key`) taşınır, sunucuya gitmez. HTTPS zorunlu, HSTS, sıkı CSP. |
+| **Gizlilik**          | IP adresleri içerikle birlikte saklanmaz; loglar anonimleştirilir; KVKK/GDPR uyumlu gizlilik metni.                                   |
+| **Performans**        | Kaydetme/okuma p95 < 300 ms; canlı odada mesaj gecikmesi p95 < 200 ms.                                                                |
+| **Ölçeklenebilirlik** | Stateless API; WebSocket için Redis Pub/Sub ile yatay ölçekleme.                                                                      |
+| **Erişilebilirlik**   | WCAG 2.1 AA; klavye ile tam kullanım; ekran okuyucu etiketleri.                                                                       |
+| **Uyumluluk**         | Son 2 sürüm Chrome, Firefox, Safari, Edge; iOS Safari & Android Chrome.                                                               |
+| **Kullanılabilirlik** | Kayıt yok; ilk ekranda tek adımda paylaşım; mobil öncelikli tasarım.                                                                  |
+| **Dayanıklılık**      | %99.5 uptime hedefi; içerik geçici olduğu için yedekleme gereksiz, sadece konfigürasyon yedeklenir.                                   |
+| **Kötüye kullanım**   | IP bazlı rate limit, boyut limitleri, CAPTCHA (şüpheli trafikte), rapor/abuse formu.                                                  |
 
 ---
 
@@ -75,21 +79,21 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 
 ### 3.1 Önerilen Teknoloji Yığını
 
-| Katman | Teknoloji | Neden |
-|---|---|---|
-| Frontend | **React + TypeScript + Vite**, Tailwind CSS, React Router | Hızlı, basit SPA; SSR gerekmiyor (içerik şifreli, SEO yalnızca ana sayfa için). |
-| Kripto | **Web Crypto API** (AES-GCM, PBKDF2) | Tarayıcıda yerleşik, ek bağımlılık yok. |
-| Backend | **Node.js 22 + Fastify + TypeScript** | Hafif, hızlı; `@fastify/websocket` ile WS desteği. |
-| Gerçek zamanlı | **WebSocket** (`ws`) + **Redis Pub/Sub** | Çoklu instance arasında oda mesajlarını dağıtmak için. |
-| Veri deposu | **Redis** (TTL'li anahtarlar) | Tüm içerik geçici → Redis'in `EXPIRE` özelliği otomatik silmeyi bedavaya verir. |
-| Dosya deposu | **S3 uyumlu** (Cloudflare R2 / MinIO) + lifecycle kuralı | Şifreli blob'lar; presigned URL ile doğrudan yükleme. |
-| Kalıcı DB (Faz 3) | PostgreSQL + Prisma/Drizzle | Sadece hesap özelliği eklenirse. |
-| Doğrulama | **Zod** (frontend + backend ortak şema) | Tek kaynaktan tip güvenliği. |
-| Test | Vitest, Supertest, Playwright | Birim, entegrasyon, E2E. |
-| Monorepo | pnpm workspaces (`apps/web`, `apps/server`, `packages/shared`) | Ortak tipler ve şemalar. |
-| Dağıtım | Docker; Fly.io / Railway / Hetzner VPS + Caddy; frontend Cloudflare Pages | WebSocket için kalıcı süreç gerekiyor (serverless uygun değil). |
-| CI/CD | GitHub Actions | Lint, test, build, deploy. |
-| Gözlemlenebilirlik | Pino log, Prometheus metrikleri / Grafana, Sentry | Hata ve performans takibi. |
+| Katman             | Teknoloji                                                                 | Neden                                                                           |
+| ------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Frontend           | **React + TypeScript + Vite**, Tailwind CSS, React Router                 | Hızlı, basit SPA; SSR gerekmiyor (içerik şifreli, SEO yalnızca ana sayfa için). |
+| Kripto             | **Web Crypto API** (AES-GCM, PBKDF2)                                      | Tarayıcıda yerleşik, ek bağımlılık yok.                                         |
+| Backend            | **Node.js 22 + Fastify + TypeScript**                                     | Hafif, hızlı; `@fastify/websocket` ile WS desteği.                              |
+| Gerçek zamanlı     | **WebSocket** (`ws`) + **Redis Pub/Sub**                                  | Çoklu instance arasında oda mesajlarını dağıtmak için.                          |
+| Veri deposu        | **Redis** (TTL'li anahtarlar)                                             | Tüm içerik geçici → Redis'in `EXPIRE` özelliği otomatik silmeyi bedavaya verir. |
+| Dosya deposu       | **S3 uyumlu** (Cloudflare R2 / MinIO) + lifecycle kuralı                  | Şifreli blob'lar; presigned URL ile doğrudan yükleme.                           |
+| Kalıcı DB (Faz 3)  | PostgreSQL + Prisma/Drizzle                                               | Sadece hesap özelliği eklenirse.                                                |
+| Doğrulama          | **Zod** (frontend + backend ortak şema)                                   | Tek kaynaktan tip güvenliği.                                                    |
+| Test               | Vitest, Supertest, Playwright                                             | Birim, entegrasyon, E2E.                                                        |
+| Monorepo           | pnpm workspaces (`apps/web`, `apps/server`, `packages/shared`)            | Ortak tipler ve şemalar.                                                        |
+| Dağıtım            | Docker; Fly.io / Railway / Hetzner VPS + Caddy; frontend Cloudflare Pages | WebSocket için kalıcı süreç gerekiyor (serverless uygun değil).                 |
+| CI/CD              | GitHub Actions                                                            | Lint, test, build, deploy.                                                      |
+| Gözlemlenebilirlik | Pino log, Prometheus metrikleri / Grafana, Sentry                         | Hata ve performans takibi.                                                      |
 
 ### 3.2 Mimari Diyagram
 
@@ -114,6 +118,7 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 ### 3.3 Uçtan Uca Şifreleme Akışı
 
 **Clip modu:**
+
 1. İstemci rastgele 256-bit anahtar (`K`) ve 96-bit IV üretir.
 2. `ciphertext = AES-GCM(K, IV, plaintext)`.
 3. `POST /api/clips` → `{ ciphertext, iv, ttl, burnAfterRead }` gönderilir. Sunucu `id` ve `deleteToken` döner.
@@ -124,6 +129,7 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 6. Parola seçeneği: `K = PBKDF2(parola, salt, 600k)`; salt ciphertext ile saklanır.
 
 **Room modu:**
+
 - Oda kodu (`ABCD-1234`) → `roomId = SHA-256(kod)[:16]`, `roomKey = HKDF(kod)`. Sunucu sadece `roomId` görür, mesajlar `roomKey` ile şifrelenir.
 - Daha güçlü alternatif (v2): cihaz eşleştirmede ECDH (X25519) + QR ile açık anahtar değişimi.
 
@@ -144,16 +150,16 @@ file:{id}            → S3 objesi `files/{id}` (lifecycle: 7 gün)
 
 ### 3.5 REST API
 
-| Metot | Yol | Açıklama |
-|---|---|---|
-| `POST` | `/api/clips` | Şifreli clip oluştur → `{ id, code, deleteToken, expiresAt }` |
-| `GET` | `/api/clips/:id` | Şifreli clip getir (burn ise okuduktan sonra atomik sil – `GETDEL`/Lua) |
-| `HEAD` | `/api/clips/:id` | Var mı / parola gerekli mi? (içerik döndürmeden) |
-| `DELETE` | `/api/clips/:id` | `Authorization: Bearer {deleteToken}` ile sil |
-| `POST` | `/api/files/presign` | Dosya yükleme için presigned PUT URL (boyut kontrolü) |
-| `GET` | `/api/files/:id` | Presigned GET URL |
-| `POST` | `/api/rooms` | Yeni oda kodu üret |
-| `GET` | `/api/health` | Sağlık kontrolü |
+| Metot    | Yol                  | Açıklama                                                                |
+| -------- | -------------------- | ----------------------------------------------------------------------- |
+| `POST`   | `/api/clips`         | Şifreli clip oluştur → `{ id, code, deleteToken, expiresAt }`           |
+| `GET`    | `/api/clips/:id`     | Şifreli clip getir (burn ise okuduktan sonra atomik sil – `GETDEL`/Lua) |
+| `HEAD`   | `/api/clips/:id`     | Var mı / parola gerekli mi? (içerik döndürmeden)                        |
+| `DELETE` | `/api/clips/:id`     | `Authorization: Bearer {deleteToken}` ile sil                           |
+| `POST`   | `/api/files/presign` | Dosya yükleme için presigned PUT URL (boyut kontrolü)                   |
+| `GET`    | `/api/files/:id`     | Presigned GET URL                                                       |
+| `POST`   | `/api/rooms`         | Yeni oda kodu üret                                                      |
+| `GET`    | `/api/health`        | Sağlık kontrolü                                                         |
 
 Tüm istek/cevaplar `packages/shared` içindeki Zod şemalarıyla doğrulanır.
 
@@ -173,19 +179,20 @@ Tüm istek/cevaplar `packages/shared` içindeki Zod şemalarıyla doğrulanır.
 { "type": "typing",  "from": "conn_x" }
 { "type": "error",   "code": "RATE_LIMITED" }
 ```
+
 - Mesaj boyutu limiti: 128 KB; bağlantı başına 20 mesaj/10 sn.
 - Heartbeat 30 sn; yanıt vermeyen bağlantı kapatılır.
 - Çoklu instance: her mesaj `PUBLISH room:{roomId}` ile yayılır.
 
 ### 3.7 Frontend Sayfaları
 
-| Rota | İçerik |
-|---|---|
-| `/` | Büyük metin alanı, "Kaydet" butonu, seçenekler (süre, tek okuma, parola), "Kod ile al" kutusu, "Canlı oda başlat" butonu |
-| `/c/:id` | İçerik görüntüleme (şifre çözme, kopyala, indir, sil, kalan süre) |
-| `/r/:code` | Canlı oda: öğe akışı, giriş alanı, dosya bırakma alanı, bağlı cihaz sayısı, QR |
-| `/about`, `/privacy`, `/terms` | Nasıl çalışır, gizlilik, kullanım şartları |
-| `/*` | 404 / "içerik süresi dolmuş" sayfası |
+| Rota                           | İçerik                                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `/`                            | Büyük metin alanı, "Kaydet" butonu, seçenekler (süre, tek okuma, parola), "Kod ile al" kutusu, "Canlı oda başlat" butonu |
+| `/c/:id`                       | İçerik görüntüleme (şifre çözme, kopyala, indir, sil, kalan süre)                                                        |
+| `/r/:code`                     | Canlı oda: öğe akışı, giriş alanı, dosya bırakma alanı, bağlı cihaz sayısı, QR                                           |
+| `/about`, `/privacy`, `/terms` | Nasıl çalışır, gizlilik, kullanım şartları                                                                               |
+| `/*`                           | 404 / "içerik süresi dolmuş" sayfası                                                                                     |
 
 **Bileşenler:** `ClipEditor`, `OptionsPanel`, `ShareResult` (kod + link + QR + kopyala), `CodeInput` (6 kutulu OTP tarzı), `ClipViewer`, `RoomFeed`, `RoomItem`, `DropZone`, `CountdownTimer`, `Toast`, `ThemeToggle`.
 
@@ -227,15 +234,18 @@ ClipBoard/
 Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 ### Faz 0 — Kurulum (≈ 2 g)
-- [ ] T0.1 pnpm monorepo iskeleti (`apps/web`, `apps/server`, `packages/shared`) — 0.5 g
-- [ ] T0.2 TypeScript, ESLint, Prettier, EditorConfig ortak ayarları — 0.25 g
-- [ ] T0.3 `docker-compose.yml`: Redis + MinIO — 0.25 g
-- [ ] T0.4 GitHub Actions CI: install → lint → typecheck → test → build — 0.5 g
-- [ ] T0.5 Ortam değişkenleri (`.env.example`), config doğrulama (Zod) — 0.25 g
-- [ ] T0.6 README: lokal kurulum ve çalıştırma — 0.25 g
+
+- [x] T0.1 pnpm monorepo iskeleti (`apps/web`, `apps/server`, `packages/shared`) — 0.5 g
+- [x] T0.2 TypeScript, ESLint, Prettier, EditorConfig ortak ayarları — 0.25 g
+- [x] T0.3 `docker-compose.yml`: Redis + MinIO — 0.25 g
+- [x] T0.4 GitHub Actions CI: install → lint → typecheck → test → build — 0.5 g
+- [x] T0.5 Ortam değişkenleri (`.env.example`), config doğrulama (Zod) — 0.25 g
+- [x] T0.6 README: lokal kurulum ve çalıştırma — 0.25 g
 
 ### Faz 1 — MVP: Metin Clip (≈ 8–10 g)
+
 **Backend**
+
 - [ ] T1.1 Fastify sunucusu, health endpoint, Pino log, graceful shutdown — 0.5 g
 - [ ] T1.2 Redis servisi ve bağlantı yönetimi — 0.25 g
 - [ ] T1.3 ID/kod üretici (Crockford Base32, çakışma kontrolü) + testleri — 0.5 g
@@ -247,6 +257,7 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 - [ ] T1.9 Entegrasyon testleri (Supertest + test Redis) — 1 g
 
 **Frontend**
+
 - [ ] T1.10 Vite + React + Tailwind + Router kurulumu, layout, tema — 0.5 g
 - [ ] T1.11 `lib/crypto.ts`: anahtar üretimi, AES-GCM encrypt/decrypt, PBKDF2, base64url + birim testleri — 1 g
 - [ ] T1.12 Ana sayfa: editör, seçenekler paneli, kaydet akışı — 1 g
@@ -258,7 +269,9 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 **Kabul kriteri:** Bir cihazda metin kaydedilip diğer cihazda kod/link/QR ile açılabiliyor; sunucu veritabanında yalnızca şifreli veri var; süre dolunca içerik yok.
 
 ### Faz 2 — v1: Canlı Oda + Dosya (≈ 10–12 g)
+
 **Canlı oda**
+
 - [ ] T2.1 `@fastify/websocket` entegrasyonu, bağlantı yaşam döngüsü, heartbeat — 1 g
 - [ ] T2.2 Oda yönetimi: katılma, presence, geçmiş (Redis LIST), TTL yenileme — 1 g
 - [ ] T2.3 Redis Pub/Sub ile çoklu instance yayını — 1 g
@@ -268,11 +281,13 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 - [ ] T2.7 Oda anahtarı türetme (HKDF) ve öğe şifreleme — 0.5 g
 
 **Dosya paylaşımı**
+
 - [ ] T2.8 S3/R2 servisi, presigned PUT/GET, lifecycle kuralı — 1 g
 - [ ] T2.9 İstemci tarafında dosya şifreleme (büyük dosya için chunk'lı AES-GCM), yükleme ilerleme çubuğu — 1.5 g
 - [ ] T2.10 DropZone + panodan görsel yapıştırma (`paste` event) + görsel önizleme — 1 g
 
 **Diğer**
+
 - [ ] T2.11 Parola koruması (UI + PBKDF2 akışı) — 0.5 g
 - [ ] T2.12 Kod modu: söz dizimi vurgulama (Shiki / highlight.js, lazy load) — 0.5 g
 - [ ] T2.13 Testler: WS entegrasyon testleri, iki tarayıcılı Playwright oda senaryosu — 1.5 g
@@ -280,6 +295,7 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 **Kabul kriteri:** İki cihaz aynı odaya bağlandığında birinin gönderdiği metin/dosya diğerinde < 1 sn içinde görünüyor; bağlantı kopunca otomatik yeniden bağlanıyor.
 
 ### Faz 3 — Yayın Hazırlığı (≈ 5 g)
+
 - [ ] T3.1 Dockerfile'lar (multi-stage), production `docker-compose` / Fly.io config — 1 g
 - [ ] T3.2 Caddy/CDN, HTTPS, HSTS, CSP (`script-src 'self'`, `connect-src` sadece API/WS) — 0.5 g
 - [ ] T3.3 Gözlemlenebilirlik: Sentry, Prometheus metrikleri (aktif oda, clip sayısı, hata oranı), uptime izleme — 1 g
@@ -290,6 +306,7 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 - [ ] T3.8 SEO: ana sayfa meta etiketleri, OG görseli, sitemap — 0.5 g
 
 ### Faz 4 — v2 (opsiyonel, ≈ 10+ g)
+
 - [ ] T4.1 PWA (manifest, service worker, Web Share Target)
 - [ ] T4.2 i18n (TR/EN)
 - [ ] T4.3 CLI aracı (`npx clipboard-cli put/get`)
@@ -321,13 +338,13 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 ## 7. Test Stratejisi
 
-| Seviye | Araç | Kapsam |
-|---|---|---|
-| Birim | Vitest | Kripto yardımcıları, ID üretici, şemalar, React bileşenleri (Testing Library) |
-| Entegrasyon | Vitest + Supertest + gerçek Redis (Testcontainers / CI service) | REST uçları, TTL, burn, rate limit, WS oda akışı |
-| E2E | Playwright (Chromium, WebKit, mobil emülasyon) | Clip oluştur/aç, kodla alma, oda senaryosu (2 context), dosya yükleme |
-| Yük | k6 | REST throughput, WS eşzamanlılık |
-| Güvenlik | OWASP ZAP baseline, `pnpm audit` | CI'da haftalık |
+| Seviye      | Araç                                                            | Kapsam                                                                        |
+| ----------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Birim       | Vitest                                                          | Kripto yardımcıları, ID üretici, şemalar, React bileşenleri (Testing Library) |
+| Entegrasyon | Vitest + Supertest + gerçek Redis (Testcontainers / CI service) | REST uçları, TTL, burn, rate limit, WS oda akışı                              |
+| E2E         | Playwright (Chromium, WebKit, mobil emülasyon)                  | Clip oluştur/aç, kodla alma, oda senaryosu (2 context), dosya yükleme         |
+| Yük         | k6                                                              | REST throughput, WS eşzamanlılık                                              |
+| Güvenlik    | OWASP ZAP baseline, `pnpm audit`                                | CI'da haftalık                                                                |
 
 Hedef: backend ve `lib/crypto` için ≥ %80 satır kapsamı.
 
@@ -335,15 +352,15 @@ Hedef: backend ve `lib/crypto` için ≥ %80 satır kapsamı.
 
 ## 8. Dağıtım ve Maliyet (tahmini)
 
-| Kalem | Seçenek | Aylık |
-|---|---|---|
-| Uygulama sunucusu | Fly.io 1 shared-cpu / Hetzner CX22 | $0–6 |
-| Redis | Upstash (free tier) / aynı VPS'te | $0–10 |
-| Dosya deposu | Cloudflare R2 (10 GB ücretsiz, egress ücretsiz) | $0–2 |
-| Frontend | Cloudflare Pages | $0 |
-| Alan adı | .com / .app | ~$1 (yıllık ~$12) |
-| İzleme | Sentry free, UptimeRobot free | $0 |
-| **Toplam** | | **≈ $0–20** |
+| Kalem             | Seçenek                                         | Aylık             |
+| ----------------- | ----------------------------------------------- | ----------------- |
+| Uygulama sunucusu | Fly.io 1 shared-cpu / Hetzner CX22              | $0–6              |
+| Redis             | Upstash (free tier) / aynı VPS'te               | $0–10             |
+| Dosya deposu      | Cloudflare R2 (10 GB ücretsiz, egress ücretsiz) | $0–2              |
+| Frontend          | Cloudflare Pages                                | $0                |
+| Alan adı          | .com / .app                                     | ~$1 (yıllık ~$12) |
+| İzleme            | Sentry free, UptimeRobot free                   | $0                |
+| **Toplam**        |                                                 | **≈ $0–20**       |
 
 **Ortamlar:** `local` (docker-compose) → `staging` (PR preview) → `production` (main'e merge ile otomatik deploy).
 
@@ -351,14 +368,14 @@ Hedef: backend ve `lib/crypto` için ≥ %80 satır kapsamı.
 
 ## 9. Riskler ve Önlemler
 
-| Risk | Etki | Önlem |
-|---|---|---|
-| Kötüye kullanım (malware, yasa dışı içerik dağıtımı) | Yüksek | Kısa TTL, dosya boyut limiti, rate limit, abuse formu, gerekirse dosyalar için CAPTCHA |
-| Kısa kodların tahmin edilmesi | Orta | Deneme sayacı, IP rate limit, kısa TTL, hassas veri için link/QR önerisi |
-| E2E nedeniyle sunucu tarafında içerik moderasyonu yapılamaması | Orta | Bilinçli ürün kararı; şartlarda belirtilir, raporlanan link sahibi tarafından sağlanan anahtarla incelenebilir |
-| WebSocket ölçekleme | Orta | Redis Pub/Sub, sticky session gerektirmeyen tasarım |
-| Link önizleme botlarının burn içeriği tüketmesi | Orta | Açık "Göster" etkileşimi gerektirme |
-| Tarayıcı `navigator.clipboard` izin farklılıkları (iOS) | Düşük | Fallback: metni seçili hale getirip kullanıcıya kopyalatma |
+| Risk                                                           | Etki   | Önlem                                                                                                          |
+| -------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| Kötüye kullanım (malware, yasa dışı içerik dağıtımı)           | Yüksek | Kısa TTL, dosya boyut limiti, rate limit, abuse formu, gerekirse dosyalar için CAPTCHA                         |
+| Kısa kodların tahmin edilmesi                                  | Orta   | Deneme sayacı, IP rate limit, kısa TTL, hassas veri için link/QR önerisi                                       |
+| E2E nedeniyle sunucu tarafında içerik moderasyonu yapılamaması | Orta   | Bilinçli ürün kararı; şartlarda belirtilir, raporlanan link sahibi tarafından sağlanan anahtarla incelenebilir |
+| WebSocket ölçekleme                                            | Orta   | Redis Pub/Sub, sticky session gerektirmeyen tasarım                                                            |
+| Link önizleme botlarının burn içeriği tüketmesi                | Orta   | Açık "Göster" etkileşimi gerektirme                                                                            |
+| Tarayıcı `navigator.clipboard` izin farklılıkları (iOS)        | Düşük  | Fallback: metni seçili hale getirip kullanıcıya kopyalatma                                                     |
 
 ---
 
