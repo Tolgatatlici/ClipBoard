@@ -117,16 +117,18 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 
 ### 3.3 Uçtan Uca Şifreleme Akışı
 
-**Clip modu:**
+**Clip modu (Faz 1'de uygulandı):**
 
-1. İstemci rastgele 256-bit anahtar (`K`) ve 96-bit IV üretir.
-2. `ciphertext = AES-GCM(K, IV, plaintext)`.
-3. `POST /api/clips` → `{ ciphertext, iv, ttl, burnAfterRead }` gönderilir. Sunucu `id` ve `deleteToken` döner.
-4. Paylaşım linki: `https://clip.example.com/c/{id}#{base64url(K)}` — `#` sonrası sunucuya **asla** gitmez.
-5. **Kısa kod ile erişim** (link yerine 6 haneli kod girilirse): anahtar URL'de olmadığı için anahtar koddan türetilir:
-   - Kod = `id` (4 karakter) + `secret` (4–6 karakter). Sunucu yalnızca `id`'yi görür; `K = PBKDF2(secret, salt=id, 200k iterasyon)`.
-   - Kısa kod entropisi düşük olduğundan: kısa süre (maks. 1 gün), sıkı rate limit (ör. IP başına 10 deneme/dk) ve `id` başına başarısız deneme sayacı (5 hatada içerik silinir) uygulanır. Kullanıcıya "hassas veri için link/QR kullanın" uyarısı gösterilir.
-6. Parola seçeneği: `K = PBKDF2(parola, salt, 600k)`; salt ciphertext ile saklanır.
+1. İstemci rastgele 256-bit ana anahtar `K` ve clip kimliği (`id`) üretir.
+2. İçerik `AES-256-GCM(HKDF(K, "content-key"), IV, plaintext, AAD=id)` ile şifrelenir.
+3. Link erişim anahtarı `HKDF(K, "link-auth")`; sunucu yalnızca SHA-256 özetini saklar.
+4. Paylaşım linki: `https://clip.example.com/c/{id}#k={base64url(K)}`. `#` sonrası sunucuya **asla** gitmez.
+5. **Kısa kod** (`ABCD-EFGH`): ilk 4 karakter `id`, son 4 karakter `secret` (Crockford Base32, 20 bit).
+   - `PBKDF2(secret, salt="clipboard/v1/code:"+id, 300k)` → 512 bit. İlk yarısı `K`'yı sarmalar (`wrappedKey`), ikinci yarısı kod erişim anahtarıdır (sunucuda özeti).
+   - Sunucu doğru erişim anahtarı gelmeden şifreli veriyi vermez; `id` başına 5 hatalı denemede kodla erişim kilitlenir (link çalışmaya devam eder, içerik silinmez → başkası yanlış kod girerek silemez).
+   - Kısa kodlu clip'ler en fazla 1 gün yaşar; IP başına dakikada 20 açma denemesi sınırı vardır.
+   - Kalan risk: Redis dökümüne erişen biri 20 bitlik `secret`'ı çevrimdışı deneyebilir. Hassas veri için "Kısa kod oluştur" kapatılabilir; o zaman `id` 12 karakterdir ve yalnızca link çalışır.
+6. Parola seçeneği (Faz 2): `K`, `PBKDF2(parola, salt, 600k)` ile sarmalanır.
 
 **Room modu:**
 
@@ -136,8 +138,8 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 ### 3.4 Veri Modeli (Redis)
 
 ```
-clip:{id}            HASH   { ct, iv, salt?, kind: text|file, mime?, size,
-                              burn: 0|1, deleteTokenHash, createdAt, failedAttempts }
+clip:{id}            HASH   { kind, ct, iv, wk?, wiv?, linkAuth, codeAuth?,
+                              burn: 0|1, del, exp, fails }          (*Auth/del = SHA-256 özet)
                      EXPIRE ttl
 room:{roomId}:meta   HASH   { createdAt, lastActivity }        EXPIRE 24h (aktivitede yenilenir)
 room:{roomId}:items  LIST   [ { ct, iv, kind, ts, senderId } ]  LTRIM 0..49, EXPIRE 24h
@@ -146,20 +148,20 @@ rl:{ip}:{route}      STRING sayaç                                EXPIRE 60s
 file:{id}            → S3 objesi `files/{id}` (lifecycle: 7 gün)
 ```
 
-**ID üretimi:** Karışabilen karakterler (0/O, 1/I/L) hariç Crockford Base32; `nanoid` ile çakışma kontrolü (`SET NX`).
+**ID üretimi:** Crockford Base32 (I, L, O, U yok), istemcide üretilir; sunucu Lua script ile yalnızca boşsa yazar, çakışmada `409` döner ve istemci yeni kimlikle tekrar dener.
 
 ### 3.5 REST API
 
-| Metot    | Yol                  | Açıklama                                                                |
-| -------- | -------------------- | ----------------------------------------------------------------------- |
-| `POST`   | `/api/clips`         | Şifreli clip oluştur → `{ id, code, deleteToken, expiresAt }`           |
-| `GET`    | `/api/clips/:id`     | Şifreli clip getir (burn ise okuduktan sonra atomik sil – `GETDEL`/Lua) |
-| `HEAD`   | `/api/clips/:id`     | Var mı / parola gerekli mi? (içerik döndürmeden)                        |
-| `DELETE` | `/api/clips/:id`     | `Authorization: Bearer {deleteToken}` ile sil                           |
-| `POST`   | `/api/files/presign` | Dosya yükleme için presigned PUT URL (boyut kontrolü)                   |
-| `GET`    | `/api/files/:id`     | Presigned GET URL                                                       |
-| `POST`   | `/api/rooms`         | Yeni oda kodu üret                                                      |
-| `GET`    | `/api/health`        | Sağlık kontrolü                                                         |
+| Metot    | Yol                   | Açıklama                                                         |
+| -------- | --------------------- | ---------------------------------------------------------------- |
+| `POST`   | `/api/clips`          | Şifreli clip oluştur → `{ id, deleteToken, expiresAt }`          |
+| `GET`    | `/api/clips/:id`      | Meta bilgi: `{ expiresAt, burnAfterRead, hasCode }` (içerik yok) |
+| `POST`   | `/api/clips/:id/open` | `{ method: link                                                  | code, token }` → şifreli içerik; burn ise atomik sil (Lua) |
+| `DELETE` | `/api/clips/:id`      | `Authorization: Bearer {deleteToken}` ile sil                    |
+| `POST`   | `/api/files/presign`  | Dosya yükleme için presigned PUT URL (boyut kontrolü)            |
+| `GET`    | `/api/files/:id`      | Presigned GET URL                                                |
+| `POST`   | `/api/rooms`          | Yeni oda kodu üret                                               |
+| `GET`    | `/api/health`         | Sağlık kontrolü                                                  |
 
 Tüm istek/cevaplar `packages/shared` içindeki Zod şemalarıyla doğrulanır.
 
@@ -246,25 +248,25 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 **Backend**
 
-- [ ] T1.1 Fastify sunucusu, health endpoint, Pino log, graceful shutdown — 0.5 g
-- [ ] T1.2 Redis servisi ve bağlantı yönetimi — 0.25 g
-- [ ] T1.3 ID/kod üretici (Crockford Base32, çakışma kontrolü) + testleri — 0.5 g
-- [ ] T1.4 `POST /api/clips` (şema doğrulama, boyut limiti, TTL, deleteToken hash) — 1 g
-- [ ] T1.5 `GET /api/clips/:id` + burn-after-read için atomik Lua script — 0.75 g
-- [ ] T1.6 `DELETE /api/clips/:id` — 0.25 g
-- [ ] T1.7 Kısa kod deneme sayacı ve brute-force koruması — 0.5 g
-- [ ] T1.8 Rate limit (`@fastify/rate-limit` + Redis), CORS, güvenlik başlıkları (`@fastify/helmet`) — 0.5 g
-- [ ] T1.9 Entegrasyon testleri (Supertest + test Redis) — 1 g
+- [x] T1.1 Fastify sunucusu, health endpoint, Pino log, graceful shutdown — 0.5 g
+- [x] T1.2 Redis servisi ve bağlantı yönetimi — 0.25 g
+- [x] T1.3 ID/kod üretici (Crockford Base32, çakışma kontrolü) + testleri — 0.5 g
+- [x] T1.4 `POST /api/clips` (şema doğrulama, boyut limiti, TTL, deleteToken hash) — 1 g
+- [x] T1.5 `GET /api/clips/:id` + burn-after-read için atomik Lua script — 0.75 g
+- [x] T1.6 `DELETE /api/clips/:id` — 0.25 g
+- [x] T1.7 Kısa kod deneme sayacı ve brute-force koruması — 0.5 g
+- [x] T1.8 Rate limit (`@fastify/rate-limit` + Redis), CORS, güvenlik başlıkları (`@fastify/helmet`) — 0.5 g
+- [x] T1.9 Entegrasyon testleri (Supertest + test Redis) — 1 g
 
 **Frontend**
 
-- [ ] T1.10 Vite + React + Tailwind + Router kurulumu, layout, tema — 0.5 g
-- [ ] T1.11 `lib/crypto.ts`: anahtar üretimi, AES-GCM encrypt/decrypt, PBKDF2, base64url + birim testleri — 1 g
-- [ ] T1.12 Ana sayfa: editör, seçenekler paneli, kaydet akışı — 1 g
-- [ ] T1.13 `ShareResult`: kod, link, QR (`qrcode` kütüphanesi), kopyala butonları — 0.5 g
-- [ ] T1.14 `CodeInput` ile kodla alma ve `/c/:id` görüntüleme sayfası (geri sayım, kopyala, sil) — 1 g
-- [ ] T1.15 Hata durumları: bulunamadı, süresi doldu, yanlış anahtar, ağ hatası — 0.5 g
-- [ ] T1.16 Playwright E2E: oluştur → linkle aç → içerik eşleşir; burn sonrası 404 — 1 g
+- [x] T1.10 Vite + React + Tailwind + Router kurulumu, layout, tema — 0.5 g
+- [x] T1.11 `lib/crypto.ts`: anahtar üretimi, AES-GCM encrypt/decrypt, PBKDF2, base64url + birim testleri — 1 g
+- [x] T1.12 Ana sayfa: editör, seçenekler paneli, kaydet akışı — 1 g
+- [x] T1.13 `ShareResult`: kod, link, QR (`qrcode` kütüphanesi), kopyala butonları — 0.5 g
+- [x] T1.14 `CodeInput` ile kodla alma ve `/c/:id` görüntüleme sayfası (geri sayım, kopyala, sil) — 1 g
+- [x] T1.15 Hata durumları: bulunamadı, süresi doldu, yanlış anahtar, ağ hatası — 0.5 g
+- [x] T1.16 Playwright E2E: oluştur → linkle aç → içerik eşleşir; burn sonrası 404 — 1 g
 
 **Kabul kriteri:** Bir cihazda metin kaydedilip diğer cihazda kod/link/QR ile açılabiliyor; sunucu veritabanında yalnızca şifreli veri var; süre dolunca içerik yok.
 

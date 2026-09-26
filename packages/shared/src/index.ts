@@ -1,2 +1,5 @@
+export * from './code.js';
 export * from './constants.js';
+export * from './crypto.js';
+export * from './encoding.js';
 export * from './schemas.js';

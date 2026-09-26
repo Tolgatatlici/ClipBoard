@@ -6,6 +6,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  /** Ters vekil (Caddy, Fly.io) arkasında gerçek istemci IP'sini almak için. */
+  TRUST_PROXY: z.stringbool().default(false),
+  /** IP başına dakikadaki en fazla istek sayısı (genel sınır). */
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   REDIS_URL: z.url().default('redis://localhost:6379'),
   S3_ENDPOINT: z.url().default('http://localhost:9000'),
   S3_REGION: z.string().default('auto'),

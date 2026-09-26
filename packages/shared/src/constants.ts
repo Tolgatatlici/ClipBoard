@@ -23,3 +23,6 @@ export const LIMITS = {
   /** Odada saklanan en fazla öğe sayısı. */
   maxRoomHistory: 50,
 } as const;
+
+/** Kısa kodla açmada izin verilen hatalı deneme sayısı; aşılınca kodla erişim kilitlenir. */
+export const MAX_CODE_ATTEMPTS = 5;

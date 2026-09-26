@@ -6,10 +6,12 @@ describe('loadConfig', () => {
     const config = loadConfig({});
     expect(config.PORT).toBe(3000);
     expect(config.NODE_ENV).toBe('development');
+    expect(config.TRUST_PROXY).toBe(false);
   });
 
-  it('coerces numeric values', () => {
+  it('coerces values', () => {
     expect(loadConfig({ PORT: '8080' }).PORT).toBe(8080);
+    expect(loadConfig({ TRUST_PROXY: 'true' }).TRUST_PROXY).toBe(true);
   });
 
   it('rejects invalid values', () => {

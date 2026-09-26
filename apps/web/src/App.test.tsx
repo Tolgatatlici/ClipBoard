@@ -1,9 +1,24 @@
 import { render, screen } from '@testing-library/react';
-import { App } from './App';
+import { MemoryRouter } from 'react-router';
+import { AppRoutes } from './App';
 
-describe('App', () => {
-  it('renders the product name', () => {
-    render(<App />);
-    expect(screen.getByRole('heading', { name: 'ClipBoard' })).toBeInTheDocument();
+describe('AppRoutes', () => {
+  it('renders the home page', () => {
+    render(
+      <MemoryRouter>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: /ClipBoard/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Paylaşmak istediğiniz metni/)).toBeInTheDocument();
+  });
+
+  it('renders a 404 page for unknown routes', () => {
+    render(
+      <MemoryRouter initialEntries={['/nope']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('heading', { name: 'Sayfa bulunamadı' })).toBeInTheDocument();
   });
 });
