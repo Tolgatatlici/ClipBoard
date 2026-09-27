@@ -130,9 +130,11 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
    - Kalan risk: Redis dökümüne erişen biri 20 bitlik `secret`'ı çevrimdışı deneyebilir. Hassas veri için "Kısa kod oluştur" kapatılabilir; o zaman `id` 12 karakterdir ve yalnızca link çalışır.
 6. Parola seçeneği (Faz 2): `K`, `PBKDF2(parola, salt, 600k)` ile sarmalanır.
 
-**Room modu:**
+**Room modu (Faz 2'de uygulandı):**
 
-- Oda kodu (`ABCD-1234`) → `roomId = SHA-256(kod)[:16]`, `roomKey = HKDF(kod)`. Sunucu sadece `roomId` görür, mesajlar `roomKey` ile şifrelenir.
+- Oda kodu 10 karakter Crockford Base32 (`ABCDE-FGHJK`, 50 bit); istemcide üretilir, link `/r#ABCDE-FGHJK`.
+- `PBKDF2(kod, "clipboard/v1/room", 300k)` → 384 bit: ilk 128 bit sunucunun gördüğü `roomId`, kalan 256 bit mesaj anahtarı. PBKDF2, sunucu verisine erişen birinin kodu çevrimdışı denemesini pahalılaştırır.
+- Her öğe `AES-GCM(roomKey, başlık + gövde, AAD=roomId)` ile şifrelenir; dosya öğeleri dosyanın kendi rastgele anahtarını şifreli başlıkta taşır.
 - Daha güçlü alternatif (v2): cihaz eşleştirmede ECDH (X25519) + QR ile açık anahtar değişimi.
 
 ### 3.4 Veri Modeli (Redis)
@@ -141,11 +143,12 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
 clip:{id}            HASH   { kind, ct, iv, wk?, wiv?, linkAuth, codeAuth?,
                               burn: 0|1, del, exp, fails }          (*Auth/del = SHA-256 özet)
                      EXPIRE ttl
-room:{roomId}:meta   HASH   { createdAt, lastActivity }        EXPIRE 24h (aktivitede yenilenir)
-room:{roomId}:items  LIST   [ { ct, iv, kind, ts, senderId } ]  LTRIM 0..49, EXPIRE 24h
-room:{roomId}:peers  SET    { connectionId... }                 (presence)
+room:{roomId}:items  LIST   [ { id, ts, ct, iv } ]             LTRIM son 50, EXPIRE 24h (aktivitede yenilenir)
+room:{roomId}:peers  ZSET   connectionId → son heartbeat        (presence, 90 sn zaman aşımı)
+room:{roomId}:events PUBSUB sunucu örnekleri arası olay dağıtımı
+file:{fileId}        HASH   { size, deleteAt }
+files:gc             ZSET   fileId → silinme zamanı              (dakikada bir temizlenir)
 rl:{ip}:{route}      STRING sayaç                                EXPIRE 60s
-file:{id}            → S3 objesi `files/{id}` (lifecycle: 7 gün)
 ```
 
 **ID üretimi:** Crockford Base32 (I, L, O, U yok), istemcide üretilir; sunucu Lua script ile yalnızca boşsa yazar, çakışmada `409` döner ve istemci yeni kimlikle tekrar dener.
@@ -274,13 +277,13 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 **Canlı oda**
 
-- [ ] T2.1 `@fastify/websocket` entegrasyonu, bağlantı yaşam döngüsü, heartbeat — 1 g
-- [ ] T2.2 Oda yönetimi: katılma, presence, geçmiş (Redis LIST), TTL yenileme — 1 g
-- [ ] T2.3 Redis Pub/Sub ile çoklu instance yayını — 1 g
-- [ ] T2.4 WS mesaj şeması doğrulama, mesaj rate limit, boyut limiti — 0.5 g
-- [ ] T2.5 Frontend `lib/ws.ts`: bağlanma, exponential backoff ile yeniden bağlanma, kuyruk — 1 g
-- [ ] T2.6 Oda sayfası: akış, giriş alanı, typing/presence göstergesi, QR ile davet — 1.5 g
-- [ ] T2.7 Oda anahtarı türetme (HKDF) ve öğe şifreleme — 0.5 g
+- [x] T2.1 `@fastify/websocket` entegrasyonu, bağlantı yaşam döngüsü, heartbeat — 1 g
+- [x] T2.2 Oda yönetimi: katılma, presence, geçmiş (Redis LIST), TTL yenileme — 1 g
+- [x] T2.3 Redis Pub/Sub ile çoklu instance yayını — 1 g
+- [x] T2.4 WS mesaj şeması doğrulama, mesaj rate limit, boyut limiti — 0.5 g
+- [x] T2.5 Frontend `lib/ws.ts`: bağlanma, exponential backoff ile yeniden bağlanma, kuyruk — 1 g
+- [x] T2.6 Oda sayfası: akış, giriş alanı, typing/presence göstergesi, QR ile davet — 1.5 g
+- [x] T2.7 Oda anahtarı türetme (HKDF) ve öğe şifreleme — 0.5 g
 
 **Dosya paylaşımı**
 
@@ -292,7 +295,7 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 - [x] T2.11 Parola koruması (UI + PBKDF2 akışı) — 0.5 g
 - [x] T2.12 Kod modu: söz dizimi vurgulama (lowlight, lazy load, innerHTML'siz) — 0.5 g
-- [ ] T2.13 Testler: WS entegrasyon testleri, iki tarayıcılı Playwright oda senaryosu — 1.5 g
+- [x] T2.13 Testler: WS entegrasyon testleri, iki tarayıcılı Playwright oda senaryosu — 1.5 g
 
 **Kabul kriteri:** İki cihaz aynı odaya bağlandığında birinin gönderdiği metin/dosya diğerinde < 1 sn içinde görünüyor; bağlantı kopunca otomatik yeniden bağlanıyor.
 

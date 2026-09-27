@@ -1,6 +1,7 @@
 import { DecryptionError, WrongPasswordError } from '@clipboard/shared';
 import { ApiError, NetworkError } from './api';
 import { FileTooLargeError } from './clips';
+import { RoomTextTooLargeError } from './rooms';
 
 /** Hatayı kullanıcıya gösterilecek Türkçe mesaja çevirir. */
 export function describeError(error: unknown): string {
@@ -32,6 +33,9 @@ export function describeError(error: unknown): string {
   }
   if (error instanceof FileTooLargeError) {
     return 'Dosya çok büyük. En fazla 25 MB paylaşabilirsiniz.';
+  }
+  if (error instanceof RoomTextTooLargeError) {
+    return 'Metin canlı oda için çok uzun (en fazla 64 KB). Büyük metinleri dosya olarak gönderin.';
   }
   if (error instanceof DecryptionError) {
     return 'İçerik çözülemedi. Link bozuk ya da eksik kopyalanmış olabilir.';

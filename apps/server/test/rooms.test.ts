@@ -1,0 +1,231 @@
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import WebSocket from 'ws';
+import type { FastifyInstance } from 'fastify';
+import { Redis } from 'ioredis';
+import { serverMessageSchema, type ServerMessage } from '@clipboard/shared';
+import { buildApp } from '../src/app.js';
+import { loadConfig } from '../src/config.js';
+import { TEST_REDIS_URL, useTestApp } from './helpers.js';
+
+const ctx = useTestApp(
+  {},
+  { rooms: { messageLimit: { count: 5, windowMs: 60_000 }, maxPeers: 3 } },
+);
+
+let baseUrl: string;
+
+const ROOM = 'A'.repeat(22);
+const OTHER_ROOM = 'B'.repeat(22);
+const clients: WebSocket[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    clients.splice(0).map(
+      (socket) =>
+        new Promise<void>((resolve) => {
+          if (socket.readyState === WebSocket.CLOSED) return resolve();
+          socket.once('close', () => resolve());
+          socket.close();
+        }),
+    ),
+  );
+});
+
+interface TestClient {
+  socket: WebSocket;
+  next(type?: ServerMessage['type']): Promise<ServerMessage>;
+  /** Belirtilen sayıda cihaz bildiren çevrimiçi mesajını bekler. */
+  peers(count: number): Promise<void>;
+  send(message: unknown): void;
+  closed: Promise<number>;
+}
+
+async function listenUrl(app: FastifyInstance) {
+  const address = await app.listen({ port: 0, host: '127.0.0.1' });
+  return address.replace('http', 'ws');
+}
+
+function connect(url: string, roomId = ROOM): TestClient {
+  const socket = new WebSocket(`${url}/ws/rooms/${roomId}`);
+  clients.push(socket);
+  const queue: ServerMessage[] = [];
+  const waiters: Array<() => void> = [];
+  socket.on('message', (data) => {
+    queue.push(serverMessageSchema.parse(JSON.parse(data.toString())));
+    waiters.splice(0).forEach((wake) => wake());
+  });
+  const closed = new Promise<number>((resolve) => socket.on('close', (code) => resolve(code)));
+
+  const client: TestClient = {
+    socket,
+    closed,
+    async peers(count) {
+      for (;;) {
+        const message = await client.next('presence');
+        if (message.type === 'presence' && message.peers === count) return;
+      }
+    },
+    send: (message) => {
+      const payload = JSON.stringify(message);
+      if (socket.readyState === WebSocket.OPEN) socket.send(payload);
+      else socket.once('open', () => socket.send(payload));
+    },
+    async next(type) {
+      const deadline = Date.now() + 2000;
+      for (;;) {
+        const index = queue.findIndex((message) => !type || message.type === type);
+        if (index !== -1) return queue.splice(index, 1)[0]!;
+        if (Date.now() > deadline) throw new Error(`Timed out waiting for ${type ?? 'message'}`);
+        await new Promise<void>((resolve) => {
+          waiters.push(resolve);
+          setTimeout(resolve, 50);
+        });
+      }
+    },
+  };
+  return client;
+}
+
+const item = (n: number) => ({ type: 'item', item: { ct: `ciphertext${n}`, iv: 'I'.repeat(16) } });
+
+describe('rooms', () => {
+  beforeAll(async () => {
+    baseUrl = await listenUrl(ctx.app);
+  });
+
+  it('welcomes a peer with an empty history', async () => {
+    const a = connect(baseUrl);
+    expect(await a.next('welcome')).toEqual({ type: 'welcome', peers: 1, history: [] });
+  });
+
+  it('broadcasts items to every peer and keeps them in the history', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    const b = connect(baseUrl);
+    await b.next('welcome');
+    await a.peers(2);
+
+    a.send(item(1));
+    const received = [await a.next('item'), await b.next('item')];
+    for (const message of received) {
+      expect(message).toMatchObject({ type: 'item', item: { ct: 'ciphertext1' } });
+    }
+
+    const c = connect(baseUrl);
+    const welcome = await c.next('welcome');
+    expect(welcome).toMatchObject({ peers: 3, history: [{ ct: 'ciphertext1' }] });
+  });
+
+  it('does not mix rooms', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    const other = connect(baseUrl, OTHER_ROOM);
+    await other.next('welcome');
+    a.send(item(1));
+    await a.next('item');
+    await expect(other.next('item')).rejects.toThrow(/Timed out/);
+  });
+
+  it('forwards typing notifications to others only', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    const b = connect(baseUrl);
+    await b.next('welcome');
+    a.send({ type: 'typing' });
+    expect(await b.next('typing')).toEqual({ type: 'typing' });
+    await expect(a.next('typing')).rejects.toThrow(/Timed out/);
+  });
+
+  it('clears the room', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    a.send(item(1));
+    await a.next('item');
+    a.send({ type: 'clear' });
+    expect(await a.next('cleared')).toEqual({ type: 'cleared' });
+    const b = connect(baseUrl);
+    expect(await b.next('welcome')).toMatchObject({ history: [] });
+  });
+
+  it('updates presence when a peer leaves', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    const b = connect(baseUrl);
+    await b.next('welcome');
+    await a.peers(2);
+    b.socket.close();
+    await a.peers(1);
+  });
+
+  it('rejects invalid messages', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    a.socket.send('not json');
+    expect(await a.next('error')).toEqual({ type: 'error', code: 'invalid_message' });
+    a.send({ type: 'item', item: { ct: 'x', iv: 'short' } });
+    expect(await a.next('error')).toEqual({ type: 'error', code: 'invalid_message' });
+  });
+
+  it('rate limits messages per connection', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    for (let i = 0; i < 6; i++) a.send({ type: 'typing' });
+    expect(await a.next('error')).toEqual({ type: 'error', code: 'rate_limited' });
+  });
+
+  it('keeps only the latest items', async () => {
+    await ctx.redis.del(`room:${ROOM}:items`);
+    for (let i = 0; i < 55; i++) {
+      await ctx.redis.rpush(
+        `room:${ROOM}:items`,
+        JSON.stringify({ id: `${i}`, ts: i, ct: 'c', iv: 'I'.repeat(16) }),
+      );
+    }
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    a.send(item(1));
+    await a.next('item');
+    const b = connect(baseUrl);
+    const welcome = await b.next('welcome');
+    expect(welcome.type === 'welcome' && welcome.history).toHaveLength(50);
+  });
+
+  it('closes connections to a full room', async () => {
+    for (let i = 0; i < 3; i++) await connect(baseUrl).next('welcome');
+    const extra = connect(baseUrl);
+    expect(await extra.next('error')).toEqual({ type: 'error', code: 'room_full' });
+    expect(await extra.closed).toBe(4001);
+  });
+
+  it('closes connections with an invalid room id', async () => {
+    const bad = connect(baseUrl, 'not-a-room');
+    expect(await bad.closed).toBe(1008);
+  });
+});
+
+describe('rooms across server instances', () => {
+  const redis = new Redis(TEST_REDIS_URL, { maxRetriesPerRequest: 1 });
+  let second: FastifyInstance;
+  let secondUrl: string;
+
+  beforeAll(async () => {
+    second = await buildApp(loadConfig({ NODE_ENV: 'test' }), { redis });
+    secondUrl = await listenUrl(second);
+  });
+
+  afterAll(async () => {
+    await second.close();
+    await redis.quit();
+  });
+
+  it('delivers items published on another instance', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    const b = connect(secondUrl);
+    await b.next('welcome');
+    await a.peers(2);
+
+    a.send(item(7));
+    expect(await b.next('item')).toMatchObject({ item: { ct: 'ciphertext7' } });
+  });
+});

@@ -22,6 +22,8 @@ export const LIMITS = {
   maxContentHeaderBytes: 1024,
   /** Canlı odada tek WebSocket mesajı için en fazla boyut (bayt). */
   maxWsMessageBytes: 128 * 1024,
+  /** Canlı odada tek metin mesajı için en fazla boyut (bayt). */
+  maxRoomTextBytes: 64 * 1024,
   /** Odada saklanan en fazla öğe sayısı. */
   maxRoomHistory: 50,
   /** Bir odaya aynı anda bağlanabilecek en fazla cihaz sayısı. */
@@ -30,3 +32,6 @@ export const LIMITS = {
 
 /** Kısa kodla açmada izin verilen hatalı deneme sayısı; aşılınca kodla erişim kilitlenir. */
 export const MAX_CODE_ATTEMPTS = 5;
+
+/** Oda, bu süre boyunca hiç etkinlik olmazsa silinir (saniye). */
+export const ROOM_TTL_SECONDS = 24 * 60 * 60;

@@ -2,11 +2,19 @@ import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import websocket from '@fastify/websocket';
 import type { Redis } from 'ioredis';
-import { MAX_CODE_ATTEMPTS, type ErrorResponse, type HealthResponse } from '@clipboard/shared';
+import {
+  LIMITS,
+  MAX_CODE_ATTEMPTS,
+  type ErrorResponse,
+  type HealthResponse,
+} from '@clipboard/shared';
 import type { Config } from './config.js';
 import { clipRoutes } from './routes/clips.js';
 import { fileRoutes } from './routes/files.js';
+import { roomRoutes } from './routes/rooms.js';
+import { RoomHub, type RoomHubOptions } from './rooms/hub.js';
 import { ClipStore } from './services/clip-store.js';
 import { FileService } from './services/file-service.js';
 import { createStorage, type FileStorage } from './services/storage/index.js';
@@ -15,6 +23,7 @@ export interface AppDeps {
   redis: Redis;
   /** Varsayılan: yapılandırmaya göre yerel disk veya S3. */
   storage?: FileStorage;
+  rooms?: RoomHubOptions;
 }
 
 /** Süresi dolan dosyaların ne sıklıkla silineceği. */
@@ -25,7 +34,7 @@ const BODY_LIMIT = 256 * 1024;
 
 export async function buildApp(
   config: Config,
-  { redis, storage = createStorage(config) }: AppDeps,
+  { redis, storage = createStorage(config), rooms }: AppDeps,
 ): Promise<FastifyInstance> {
   const app = Fastify({
     bodyLimit: BODY_LIMIT,
@@ -85,11 +94,20 @@ export async function buildApp(
     store: new ClipStore(redis, MAX_CODE_ATTEMPTS),
     files,
     rateLimits: {
-      create: Math.min(30, config.RATE_LIMIT_MAX),
-      open: Math.min(20, config.RATE_LIMIT_MAX),
+      create: Math.min(config.RATE_LIMIT_CREATE_MAX, config.RATE_LIMIT_MAX),
+      open: Math.min(config.RATE_LIMIT_OPEN_MAX, config.RATE_LIMIT_MAX),
     },
   });
-  await app.register(fileRoutes, { files, rateLimit: Math.min(20, config.RATE_LIMIT_MAX) });
+  await app.register(fileRoutes, {
+    files,
+    rateLimit: Math.min(config.RATE_LIMIT_FILE_MAX, config.RATE_LIMIT_MAX),
+  });
+
+  await app.register(websocket, { options: { maxPayload: LIMITS.maxWsMessageBytes } });
+  // Pub/Sub aboneliği ayrı bir Redis bağlantısı gerektirir.
+  const hub = new RoomHub(redis, redis.duplicate(), app.log, rooms);
+  await app.register(roomRoutes, { hub });
+  app.addHook('preClose', async () => hub.close());
 
   const sweeper = setInterval(() => {
     files.sweep().catch((err: unknown) => app.log.error(err, 'file sweep failed'));

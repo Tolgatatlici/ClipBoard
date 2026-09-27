@@ -14,3 +14,20 @@ describe('rate limiting', () => {
     expect(statuses).toEqual([404, 404, 404, 429]);
   });
 });
+
+describe('route specific rate limits', () => {
+  const routeCtx = useTestApp({ RATE_LIMIT_OPEN_MAX: '2' });
+
+  it('limits clip open attempts separately', async () => {
+    const statuses: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const res = await routeCtx.app.inject({
+        method: 'POST',
+        url: '/api/clips/ZZZZ/open',
+        payload: { method: 'code', token: 'A'.repeat(43) },
+      });
+      statuses.push(res.statusCode);
+    }
+    expect(statuses).toEqual([404, 404, 429]);
+  });
+});

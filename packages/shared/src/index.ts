@@ -3,4 +3,5 @@ export * from './constants.js';
 export * from './content.js';
 export * from './crypto.js';
 export * from './encoding.js';
+export * from './room.js';
 export * from './schemas.js';

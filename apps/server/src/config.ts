@@ -10,6 +10,10 @@ const envSchema = z.object({
   TRUST_PROXY: z.stringbool().default(false),
   /** IP başına dakikadaki en fazla istek sayısı (genel sınır). */
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
+  /** IP başına dakikada en fazla clip oluşturma, clip açma ve dosya yükleme isteği. */
+  RATE_LIMIT_CREATE_MAX: z.coerce.number().int().positive().default(30),
+  RATE_LIMIT_OPEN_MAX: z.coerce.number().int().positive().default(20),
+  RATE_LIMIT_FILE_MAX: z.coerce.number().int().positive().default(20),
   REDIS_URL: z.url().default('redis://localhost:6379'),
   /** `local`: dosyalar sunucu diskinde (geliştirme/tek sunucu). `s3`: S3 uyumlu depolama. */
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),

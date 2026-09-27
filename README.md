@@ -67,6 +67,7 @@ Süresi dolan, silinen ya da tek okumalık olup açılan (15 dk sonra) dosyalar 
 5. **Parola:** Link bir "link sırrı" taşır; ana anahtar, link sırrı ve paroladan (PBKDF2, 600k) türetilen anahtarla sarmalanır. Açmak için ikisi de gerekir; parolalı paylaşımlarda kısa kod yoktur.
 6. **Dosyalar:** Dosya ayrı bir anahtarla şifrelenir; dosya adı ve türü de şifreli içerik başlığındadır.
 7. Tek okumalık içerik, açıldığı istekte atomik olarak silinir.
+8. **Canlı oda:** 10 karakterlik oda kodundan (PBKDF2) sunucunun gördüğü oda kimliği ve mesaj anahtarı türetilir. Mesajlar WebSocket ile iletilir, Redis Pub/Sub sayesinde birden fazla sunucu örneği çalışabilir; oda son 50 öğeyi tutar ve 24 saat hareketsiz kalınca silinir.
 
 Ayrıntılar için [docs/PLAN.md](docs/PLAN.md) § 3.3.
 
