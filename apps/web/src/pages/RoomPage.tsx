@@ -33,6 +33,7 @@ import {
   textItem,
   type RoomEntry,
 } from '../lib/rooms';
+import { useTitle } from '../lib/use-title';
 
 /** Karşı taraf yazıyor bildiriminin ne kadar süre gösterileceği. */
 const TYPING_VISIBLE_MS = 3000;
@@ -40,6 +41,7 @@ const TYPING_VISIBLE_MS = 3000;
 const TYPING_THROTTLE_MS = 2000;
 
 export function RoomPage() {
+  useTitle('Canlı oda');
   const { hash } = useLocation();
   const navigate = useNavigate();
   const raw = decodeURIComponent(hash.replace(/^#/, ''));
@@ -335,7 +337,7 @@ function Composer(props: {
           {(['plain', 'code'] as const).map((option) => (
             <label
               key={option}
-              className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1 text-sm has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-600 has-[:checked]:text-white dark:border-slate-700"
+              className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1 text-sm has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-indigo-500 dark:border-slate-700"
             >
               <input
                 type="radio"

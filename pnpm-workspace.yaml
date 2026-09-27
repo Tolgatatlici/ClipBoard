@@ -4,3 +4,7 @@ packages:
 
 onlyBuiltDependencies:
   - esbuild
+
+# GHSA-g7r4-m6w7-qqqr: tsup'ın getirdiği esbuild sürümü yamalı sürüme yükseltilir.
+overrides:
+  esbuild@>=0.27.3 <0.28.1: ^0.28.1

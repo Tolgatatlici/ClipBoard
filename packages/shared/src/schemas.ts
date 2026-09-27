@@ -149,6 +149,19 @@ export type CreateFileResponse = z.infer<typeof createFileResponseSchema>;
 export const fileDownloadResponseSchema = z.object({ url: z.string() });
 export type FileDownloadResponse = z.infer<typeof fileDownloadResponseSchema>;
 
+export const REPORT_REASONS = ['illegal', 'malware', 'phishing', 'copyright', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+export const createReportRequestSchema = z.object({
+  /** Bildirilen içeriğin linki ya da kodu. */
+  target: z.string().trim().min(4).max(500),
+  reason: z.enum(REPORT_REASONS),
+  details: z.string().trim().max(2000).default(''),
+  contact: z.string().trim().max(200).default(''),
+});
+
+export type CreateReportRequest = z.input<typeof createReportRequestSchema>;
+
 export const ERROR_CODES = [
   'invalid_request',
   'not_found',

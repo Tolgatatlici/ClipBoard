@@ -4,10 +4,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Haftalık: yeni çıkan güvenlik açıkları için bağımlılık denetimi.
+    - cron: '17 6 * * 1'
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   check:
@@ -24,6 +30,7 @@ jobs:
           --health-retries 5
     env:
       TEST_REDIS_URL: redis://localhost:6379/15
+      S3_TEST_ENDPOINT: http://localhost:8333
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -32,9 +39,17 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Dependency audit
+        run: pnpm audit --audit-level=moderate
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      - name: Start S3-compatible storage (SeaweedFS)
+        run: |
+          docker run -d --name s3 -p 8333:8333 \
+            -v "$PWD/deploy/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro" \
+            chrislusf/seaweedfs:latest server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data
+          for i in $(seq 1 30); do curl -s -o /dev/null localhost:8333 && break; sleep 1; done
       - run: pnpm test
       - run: pnpm build
       - name: Install Playwright browser
@@ -49,3 +64,27 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report
           retention-days: 7
+
+  docker:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t clipboard:ci .
+      - name: Smoke test
+        run: |
+          docker run -d --name app --network host \
+            -e REDIS_URL=redis://127.0.0.1:6379 -e FILE_SIGNING_SECRET="$(openssl rand -base64 48)" \
+            clipboard:ci
+          for i in $(seq 1 30); do curl -sf localhost:3000/api/health && break; sleep 1; done
+          curl -sf localhost:3000/api/health
+          curl -sf -H 'Accept: text/html' -D headers.txt -o index.html localhost:3000/c/ABCD
+          grep -qi "content-security-policy: default-src 'self'" headers.txt
+          grep -qi "x-robots-tag: noindex" headers.txt
+          grep -q '<div id="root">' index.html
+          test "$(docker exec app id -u)" != "0"

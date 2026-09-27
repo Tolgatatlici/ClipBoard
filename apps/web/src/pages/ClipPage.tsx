@@ -26,6 +26,7 @@ import {
 } from '../lib/clips';
 import { getDeleteToken, removeDeleteToken } from '../lib/delete-tokens';
 import { saveBytes } from '../lib/download';
+import { useTitle } from '../lib/use-title';
 
 type State =
   | { step: 'loading' }
@@ -53,6 +54,7 @@ function isRetryableCodeError(error: unknown): boolean {
 }
 
 export function ClipPage() {
+  useTitle('Paylaşılan içerik');
   // URL (kimlik veya `#` kısmı) değişince sayfa sıfırdan kurulur ve yükleniyor durumuna döner.
   const { pathname, hash } = useLocation();
   return <ClipLoader key={pathname + hash} />;

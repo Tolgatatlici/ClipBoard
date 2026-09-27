@@ -25,6 +25,10 @@ services:
     image: clipboard:latest
     build:
       context: ..
+      args:
+        VITE_SITE_URL: https://${DOMAIN}
+        VITE_OPERATOR_NAME: ${OPERATOR_NAME:-}
+        VITE_CONTACT_EMAIL: ${CONTACT_EMAIL:-}
     restart: unless-stopped
     env_file: .env.prod
     environment:

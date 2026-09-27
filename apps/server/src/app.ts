@@ -16,10 +16,12 @@ import { initSentry, observability, reportError } from './plugins/observability.
 import { securityHeaders } from './plugins/security-headers.js';
 import { isPageRequest, staticSite } from './plugins/static-site.js';
 import { fileRoutes } from './routes/files.js';
+import { reportRoutes } from './routes/reports.js';
 import { roomRoutes } from './routes/rooms.js';
 import { RoomHub, type RoomHubOptions } from './rooms/hub.js';
 import { ClipStore } from './services/clip-store.js';
 import { FileService } from './services/file-service.js';
+import { ReportStore } from './services/report-store.js';
 import { createStorage, type FileStorage } from './services/storage/index.js';
 
 export interface AppDeps {
@@ -73,6 +75,10 @@ export async function buildApp(
   app.setNotFoundHandler((request, reply) => {
     // Tek sayfalık uygulama: sayfa yolları index.html'e düşer, istemci yönlendirir.
     if (staticDir && isPageRequest(request.method, request.url, request.headers.accept)) {
+      // Paylaşım ve oda sayfaları arama motorlarında görünmemeli.
+      if (/^\/(c\/|r(\?|#|$)|bildir)/.test(request.url)) {
+        reply.header('X-Robots-Tag', 'noindex, nofollow');
+      }
       return reply.header('Cache-Control', 'no-cache').sendFile('index.html');
     }
     return reply.code(404).send({ error: 'not_found' } satisfies ErrorResponse);
@@ -127,6 +133,11 @@ export async function buildApp(
     files,
     metrics,
     rateLimit: Math.min(config.RATE_LIMIT_FILE_MAX, config.RATE_LIMIT_MAX),
+  });
+
+  await app.register(reportRoutes, {
+    reports: new ReportStore(redis),
+    rateLimit: Math.min(5, config.RATE_LIMIT_MAX),
   });
 
   await app.register(websocket, { options: { maxPayload: LIMITS.maxWsMessageBytes } });

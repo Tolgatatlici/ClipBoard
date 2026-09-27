@@ -301,14 +301,14 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 ### Faz 3 — Yayın Hazırlığı (≈ 5 g)
 
-- [ ] T3.1 Dockerfile'lar (multi-stage), production `docker-compose` / Fly.io config — 1 g
-- [ ] T3.2 Caddy/CDN, HTTPS, HSTS, CSP (`script-src 'self'`, `connect-src` sadece API/WS) — 0.5 g
-- [ ] T3.3 Gözlemlenebilirlik: Sentry, Prometheus metrikleri (aktif oda, clip sayısı, hata oranı), uptime izleme — 1 g
-- [ ] T3.4 Gizlilik politikası, kullanım şartları, abuse raporlama formu (KVKK/GDPR) — 0.5 g
-- [ ] T3.5 Erişilebilirlik denetimi (axe, Lighthouse), mobil testler — 0.5 g
-- [ ] T3.6 Yük testi (k6): 1000 eşzamanlı WS, 200 rps clip oluşturma — 0.5 g
-- [ ] T3.7 Güvenlik gözden geçirmesi: bağımlılık taraması (Dependabot, `pnpm audit`), OWASP kontrol listesi — 0.5 g
-- [ ] T3.8 SEO: ana sayfa meta etiketleri, OG görseli, sitemap — 0.5 g
+- [x] T3.1 Dockerfile'lar (multi-stage), production `docker-compose` / Fly.io config — 1 g
+- [x] T3.2 Caddy/CDN, HTTPS, HSTS, CSP (`script-src 'self'`, `connect-src` sadece API/WS) — 0.5 g
+- [x] T3.3 Gözlemlenebilirlik: Sentry, Prometheus metrikleri (aktif oda, clip sayısı, hata oranı), uptime izleme — 1 g
+- [x] T3.4 Gizlilik politikası, kullanım şartları, abuse raporlama formu (KVKK/GDPR) — 0.5 g
+- [x] T3.5 Erişilebilirlik denetimi (axe, Lighthouse), mobil testler — 0.5 g _(axe WCAG 2.1 AA, açık/koyu tema, masaüstü/mobil E2E; Lighthouse yapılmadı)_
+- [x] T3.6 Yük testi (k6): 1000 eşzamanlı WS, 200 rps clip oluşturma — 0.5 g _(sonuçlar: docs/LOADTEST.md)_
+- [x] T3.7 Güvenlik gözden geçirmesi: bağımlılık taraması (Dependabot, `pnpm audit`), OWASP kontrol listesi — 0.5 g
+- [x] T3.8 SEO: ana sayfa meta etiketleri, OG görseli, sitemap — 0.5 g
 
 ### Faz 4 — v2 (opsiyonel, ≈ 10+ g)
 

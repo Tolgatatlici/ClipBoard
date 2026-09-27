@@ -17,6 +17,13 @@ RUN --mount=type=secret,id=ca_bundle,required=false \
     pnpm install --frozen-lockfile
 
 COPY . .
+# Arayüze derleme sırasında gömülen yayın bilgileri (bkz. docs/DEPLOY.md).
+ARG VITE_SITE_URL=""
+ARG VITE_OPERATOR_NAME=""
+ARG VITE_CONTACT_EMAIL=""
+ENV VITE_SITE_URL=$VITE_SITE_URL \
+    VITE_OPERATOR_NAME=$VITE_OPERATOR_NAME \
+    VITE_CONTACT_EMAIL=$VITE_CONTACT_EMAIL
 RUN --mount=type=secret,id=ca_bundle,required=false \
     if [ -f /run/secrets/ca_bundle ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/ca_bundle; fi; \
     pnpm --filter @clipboard/web build \

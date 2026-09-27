@@ -2,6 +2,8 @@
 
 Cihazlarınız arasında metin ve dosyaları **uçtan uca şifreli**, **süreli** ve **kayıt gerektirmeden** paylaşmanızı sağlayan online pano. Proje planı ve görev listesi için [docs/PLAN.md](docs/PLAN.md) dosyasına bakın.
 
+Belgeler: [proje planı](docs/PLAN.md) · [yayına alma](docs/DEPLOY.md) · [yük testi](docs/LOADTEST.md) · [güvenlik](SECURITY.md)
+
 ## Proje yapısı
 
 ```
@@ -24,11 +26,11 @@ packages/
 corepack enable
 pnpm install
 cp .env.example .env
-pnpm services:up      # Redis + MinIO (bucket otomatik oluşturulur)
+pnpm services:up      # Redis + SeaweedFS (S3; bucket otomatik oluşturulur)
 pnpm dev              # sunucu :3000, arayüz :5173
 ```
 
-Arayüz http://localhost:5173 adresinde açılır. `/api` ve `/ws` istekleri Vite üzerinden sunucuya yönlendirilir. MinIO konsolu: http://localhost:9001 (`minioadmin` / `minioadmin`).
+Arayüz http://localhost:5173 adresinde açılır. `/api` ve `/ws` istekleri Vite üzerinden sunucuya yönlendirilir. Varsayılan dosya sürücüsü yerel disktir; S3 ile denemek için `.env` içinde `STORAGE_DRIVER=s3` yapın (SeaweedFS: http://localhost:8333).
 
 ## Komutlar
 
@@ -54,7 +56,7 @@ Tüm değişkenler ve varsayılanları `.env.example` dosyasındadır. Sunucu a�
 Dosyalar tarayıcıda şifrelenip sunucuya ya da S3'e anlamsız baytlar olarak yüklenir.
 
 - `STORAGE_DRIVER=local` (varsayılan): dosyalar `STORAGE_DIR` altında tutulur; yükleme ve indirme sunucunun imzalı, süreli linkleriyle yapılır. Birden fazla sunucu çalıştırılacaksa `FILE_SIGNING_SECRET` hepsinde aynı olmalı ve dizin paylaşılmalıdır.
-- `STORAGE_DRIVER=s3`: tarayıcı presigned URL ile doğrudan S3/R2/MinIO'ya yükler. Bucket'ta, web uygulamasının adresinden `PUT` ve `GET` isteklerine izin veren bir CORS kuralı gerekir.
+- `STORAGE_DRIVER=s3`: tarayıcı presigned URL ile doğrudan S3/R2/SeaweedFS'e yükler. Bucket'ta, web uygulamasının adresinden `PUT` ve `GET` isteklerine izin veren bir CORS kuralı gerekir.
 
 Süresi dolan, silinen ya da tek okumalık olup açılan (15 dk sonra) dosyalar sunucu tarafından dakikada bir temizlenir.
 
@@ -82,3 +84,10 @@ pnpm --filter @clipboard/web e2e
 ```
 
 Önceden kurulu bir Chromium kullanmak için `PW_CHROMIUM_PATH=/yol/chromium` ayarlayın.
+
+Diğer test seçenekleri:
+
+- `S3_TEST_ENDPOINT=http://localhost:8333 pnpm --filter @clipboard/server test`: S3 sürücüsünü docker compose'daki SeaweedFS'e karşı test eder.
+- `E2E_STORAGE_DRIVER=s3`: E2E testlerinde dosyalar SeaweedFS'e yüklenir.
+- `E2E_BASE_URL=https://localhost E2E_IGNORE_HTTPS_ERRORS=1`: E2E testlerini çalışan bir kuruluma (ör. `deploy/` ile `DOMAIN=localhost`) karşı koşar.
+- Her E2E testi, sayfada CSP ihlali ya da yakalanmamış hata olursa başarısız olur; erişilebilirlik (axe, WCAG 2.1 AA) testleri `e2e/a11y.spec.ts` içindedir.

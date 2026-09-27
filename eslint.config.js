@@ -14,6 +14,11 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // k6 betikleri k6'nın kendi çalışma zamanında koşar.
+    files: ['loadtest/**/*.js'],
+    languageOptions: { globals: { __ENV: 'readonly', __VU: 'readonly', __ITER: 'readonly' } },
+  },
+  {
     // Playwright testleri ve yapılandırmalar Node'da çalışır; fikstürlerin `use`
     // parametresi React hook'u değildir ve `{}` deseni Playwright'ın zorunlu kıldığı biçimdir.
     files: ['apps/web/e2e/**/*.ts', 'apps/web/*.config.ts'],

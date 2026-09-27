@@ -9,6 +9,7 @@ import {
   type CreateClipRequest,
   type CreateClipResponse,
   type CreateFileRequest,
+  type CreateReportRequest,
   type CreateFileResponse,
   type ErrorResponse,
   type OpenClipRequest,
@@ -95,6 +96,10 @@ export const api = {
       { method: 'POST', body: JSON.stringify(body) },
       createFileResponseSchema,
     );
+  },
+
+  createReport(body: CreateReportRequest): Promise<void> {
+    return request('/api/reports', { method: 'POST', body: JSON.stringify(body) });
   },
 
   async getFileUrl(fileId: string): Promise<string> {

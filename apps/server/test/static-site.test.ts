@@ -34,6 +34,17 @@ describe('static site', () => {
     }
   });
 
+  it('keeps share and room pages out of search engines', async () => {
+    for (const url of ['/c/ABCD', '/r', '/bildir']) {
+      const res = await ctx.app.inject({ method: 'GET', url, headers: html });
+      expect(res.headers['x-robots-tag'], url).toBe('noindex, nofollow');
+    }
+    for (const url of ['/', '/gizlilik', '/robots-like']) {
+      const res = await ctx.app.inject({ method: 'GET', url, headers: html });
+      expect(res.headers['x-robots-tag'], url).toBeUndefined();
+    }
+  });
+
   it('caches hashed assets forever', async () => {
     const res = await ctx.app.inject({ method: 'GET', url: '/assets/index-abc123.js' });
     expect(res.statusCode).toBe(200);

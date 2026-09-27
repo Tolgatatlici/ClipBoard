@@ -27,8 +27,24 @@ export function Layout() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <Outlet />
       </main>
-      <footer className="muted mx-auto max-w-3xl px-4 py-6 text-center text-xs">
-        İçerik tarayıcınızda şifrelenir; sunucu okuyamaz. Süresi dolan içerik otomatik silinir.
+      <footer className="muted mx-auto flex max-w-3xl flex-col items-center gap-2 px-4 py-6 text-center text-xs">
+        <p>
+          İçerik tarayıcınızda şifrelenir; sunucu okuyamaz. Süresi dolan içerik otomatik silinir.
+        </p>
+        <nav aria-label="Alt bilgi" className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          <Link to="/nasil-calisir" className="hover:underline">
+            Nasıl çalışır
+          </Link>
+          <Link to="/gizlilik" className="hover:underline">
+            Gizlilik
+          </Link>
+          <Link to="/kullanim-kosullari" className="hover:underline">
+            Kullanım koşulları
+          </Link>
+          <Link to="/bildir" className="hover:underline">
+            Kötüye kullanım bildir
+          </Link>
+        </nav>
       </footer>
     </div>
   );

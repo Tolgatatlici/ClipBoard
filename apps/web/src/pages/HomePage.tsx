@@ -5,8 +5,10 @@ import { CodeInput, RoomCodeInput } from '../components/CodeInput';
 import { ShareForm } from '../components/ShareForm';
 import { ShareResult } from '../components/ShareResult';
 import type { CreatedClip } from '../lib/clips';
+import { useTitle } from '../lib/use-title';
 
 export function HomePage() {
+  useTitle();
   const navigate = useNavigate();
   const [created, setCreated] = useState<CreatedClip | null>(null);
 

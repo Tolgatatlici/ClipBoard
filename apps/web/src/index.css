@@ -37,13 +37,13 @@
 /* Söz dizimi vurgulama (lowlight / highlight.js sınıfları) */
 .hljs-comment,
 .hljs-quote {
-  @apply text-slate-500 italic;
+  @apply text-slate-600 italic dark:text-slate-400;
 }
 .hljs-keyword,
 .hljs-selector-tag,
 .hljs-literal,
 .hljs-doctag {
-  @apply text-rose-600 dark:text-rose-400;
+  @apply text-rose-700 dark:text-rose-400;
 }
 .hljs-string,
 .hljs-regexp,
