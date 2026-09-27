@@ -9,9 +9,10 @@ Belgeler: [proje planı](docs/PLAN.md) · [yayına alma](docs/DEPLOY.md) · [yü
 ```
 apps/
   server/     Fastify API + WebSocket sunucusu
-  web/        React + Vite + Tailwind arayüzü
+  web/        React + Vite + Tailwind arayüzü (PWA)
 packages/
-  shared/     Ortak sabitler, Zod şemaları ve tipler
+  shared/     Şifreleme, Zod şemaları, API istemcisi ve ortak tipler
+  cli/        Komut satırı aracı (`clip put` / `clip get`)
 ```
 
 ## Gereksinimler
@@ -59,6 +60,22 @@ Dosyalar tarayıcıda şifrelenip sunucuya ya da S3'e anlamsız baytlar olarak y
 - `STORAGE_DRIVER=s3`: tarayıcı presigned URL ile doğrudan S3/R2/SeaweedFS'e yükler. Bucket'ta, web uygulamasının adresinden `PUT` ve `GET` isteklerine izin veren bir CORS kuralı gerekir.
 
 Süresi dolan, silinen ya da tek okumalık olup açılan (15 dk sonra) dosyalar sunucu tarafından dakikada bir temizlenir.
+
+## Komut satırı aracı (`clip`)
+
+```bash
+pnpm --filter @clipboard/cli build
+alias clip="node $PWD/packages/cli/dist/clip.js"     # ya da: cd packages/cli && npm link
+export CLIPBOARD_SERVER=https://clip.example.com
+
+echo "merhaba" | clip put                 # metin → kod + link
+clip put rapor.pdf --ttl 1d --burn        # dosya, ilk açılışta silinir
+clip put secrets.env --text --password    # parola sorulur (ya da CLIPBOARD_PASSWORD)
+clip get ABCD-EFGH                        # metni yazdırır / dosyayı kaydeder
+clip get "https://clip.example.com/c/…#k=…" -o cikti.txt
+```
+
+Şifreleme web uygulamasıyla aynıdır; CLI ile paylaşılan içerik tarayıcıda, tarayıcıda paylaşılan içerik CLI ile açılabilir. Tüm seçenekler için `clip --help`.
 
 ## Nasıl çalışır?
 

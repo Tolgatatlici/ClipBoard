@@ -1,3 +1,4 @@
+export * from './client.js';
 export * from './code.js';
 export * from './constants.js';
 export * from './content.js';

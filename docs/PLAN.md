@@ -314,7 +314,7 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 - [x] T4.1 PWA (manifest, service worker, Web Share Target)
 - [x] T4.2 i18n (TR/EN)
-- [ ] T4.3 CLI aracı (`npx clipboard-cli put/get`)
+- [x] T4.3 CLI aracı (`clip put/get`)
 - [ ] T4.4 Tarayıcı eklentisi
 - [ ] T4.5 Opsiyonel hesap + kalıcı cihaz eşleştirme (PostgreSQL)
 - [ ] T4.6 ECDH tabanlı cihaz eşleştirme (daha güçlü E2E)
