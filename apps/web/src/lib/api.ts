@@ -1,11 +1,15 @@
 import {
   clipMetaResponseSchema,
   createClipResponseSchema,
+  createFileResponseSchema,
+  fileDownloadResponseSchema,
   errorResponseSchema,
   openClipResponseSchema,
   type ClipMetaResponse,
   type CreateClipRequest,
   type CreateClipResponse,
+  type CreateFileRequest,
+  type CreateFileResponse,
   type ErrorResponse,
   type OpenClipRequest,
   type OpenClipResponse,
@@ -13,6 +17,11 @@ import {
 import type { z } from 'zod';
 
 const API_BASE: string = import.meta.env.VITE_API_URL ?? '';
+
+/** Sunucunun döndürdüğü göreli adresleri (yerel dosya sürücüsü) API adresine bağlar. */
+export function resolveApiUrl(url: string): string {
+  return url.startsWith('/') ? API_BASE + url : url;
+}
 
 /** Sunucu bir hata yanıtı döndürdüğünde fırlatılır. */
 export class ApiError extends Error {
@@ -79,4 +88,56 @@ export const api = {
       headers: { Authorization: `Bearer ${deleteToken}` },
     });
   },
+
+  createFile(body: CreateFileRequest): Promise<CreateFileResponse> {
+    return request(
+      '/api/files',
+      { method: 'POST', body: JSON.stringify(body) },
+      createFileResponseSchema,
+    );
+  },
+
+  async getFileUrl(fileId: string): Promise<string> {
+    const { url } = await request(
+      `/api/files/${fileId}`,
+      { method: 'GET' },
+      fileDownloadResponseSchema,
+    );
+    return resolveApiUrl(url);
+  },
 };
+
+/** Şifreli blob'u yükler; ilerlemeyi 0–1 arasında bildirir. */
+export function uploadBlob(
+  target: CreateFileResponse['upload'],
+  blob: Uint8Array<ArrayBuffer>,
+  onProgress?: (fraction: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(target.method, resolveApiUrl(target.url));
+    for (const [name, value] of Object.entries(target.headers)) xhr.setRequestHeader(name, value);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded / event.total);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new ApiError(xhr.status, { error: 'internal', message: 'Upload failed' }));
+    };
+    xhr.onerror = () => reject(new NetworkError());
+    xhr.send(blob);
+  });
+}
+
+/** Şifreli blob'u indirir. */
+export async function downloadBlob(url: string): Promise<Uint8Array<ArrayBuffer>> {
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new NetworkError();
+  }
+  if (!res.ok)
+    throw new ApiError(res.status, { error: res.status === 404 ? 'not_found' : 'internal' });
+  return new Uint8Array(await res.arrayBuffer());
+}

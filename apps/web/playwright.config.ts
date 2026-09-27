@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 const API_PORT = 3100;
@@ -16,7 +18,11 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'retain-on-failure',
-    launchOptions: { executablePath },
+    launchOptions: {
+      executablePath,
+      // POSIX yerel ayarında Chromium ASCII dışı indirme adlarını "download" yapar.
+      env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' },
+    },
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
@@ -33,6 +39,8 @@ export default defineConfig({
         REDIS_URL: process.env.E2E_REDIS_URL ?? 'redis://localhost:6379/14',
         CORS_ORIGIN: baseURL,
         RATE_LIMIT_MAX: '10000',
+        STORAGE_DRIVER: 'local',
+        STORAGE_DIR: join(tmpdir(), 'clipboard-e2e-files'),
       },
     },
     {

@@ -4,21 +4,29 @@ import {
   createClipResponseSchema,
   linkAccess,
   MAX_CODE_ATTEMPTS,
+  openClip,
   openClipResponseSchema,
-  openText,
-  sealText,
+  sealClip,
   type ClipAccess,
+  type ClipContent,
   type TtlOption,
 } from '@clipboard/shared';
 import { useTestApp } from './helpers.js';
 
 const ctx = useTestApp();
 
+const content = (text: string): ClipContent => ({ kind: 'text', format: 'plain', text });
+const sealText = (text: string, options: { withCode: boolean; password?: string }) =>
+  sealClip(content(text), options);
+
 async function createClip(
   text: string,
-  options: { withCode?: boolean; ttl?: TtlOption; burnAfterRead?: boolean } = {},
+  options: { withCode?: boolean; ttl?: TtlOption; burnAfterRead?: boolean; password?: string } = {},
 ) {
-  const sealed = await sealText(text, { withCode: options.withCode ?? true });
+  const sealed = await sealText(text, {
+    withCode: options.withCode ?? true,
+    password: options.password,
+  });
   const res = await ctx.app.inject({
     method: 'POST',
     url: '/api/clips',
@@ -98,7 +106,7 @@ describe('POST /api/clips', () => {
   });
 
   it('rejects content over the size limit', async () => {
-    const sealed = await sealText('x'.repeat(100 * 1024 + 1), { withCode: false });
+    const sealed = await sealText('x'.repeat(100 * 1024 + 2048), { withCode: false });
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/api/clips',
@@ -123,6 +131,38 @@ describe('POST /api/clips', () => {
   });
 });
 
+describe('password protected clips', () => {
+  it('stores the password wrap and returns it on open', async () => {
+    const { sealed } = await createClip('parolalı', { withCode: false, password: 'gizli' });
+    const meta = await ctx.app.inject({ method: 'GET', url: `/api/clips/${sealed.id}` });
+    expect(meta.json().hasPassword).toBe(true);
+
+    const access = await linkAccess(sealed.key);
+    const res = await open(sealed.id, access);
+    const payload = openClipResponseSchema.parse(res.json());
+    expect(payload.passwordWrap).toEqual(sealed.request.passwordWrap);
+    expect((await openClip(sealed.id, access, payload, 'gizli')).content).toEqual(
+      content('parolalı'),
+    );
+  });
+
+  it('rejects password clips that also carry a short code', async () => {
+    const withCode = await sealText('x', { withCode: true });
+    const withPassword = await sealText('x', { withCode: false, password: 'p' });
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/api/clips',
+      payload: {
+        ...withCode.request,
+        passwordWrap: withPassword.request.passwordWrap,
+        ttl: '1h',
+        burnAfterRead: false,
+      },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+});
+
 describe('GET /api/clips/:id', () => {
   it('returns metadata without content', async () => {
     const { sealed, created } = await createClip('x', { burnAfterRead: true });
@@ -133,6 +173,7 @@ describe('GET /api/clips/:id', () => {
       expiresAt: created.expiresAt,
       burnAfterRead: true,
       hasCode: true,
+      hasPassword: false,
     });
   });
 
@@ -151,7 +192,9 @@ describe('POST /api/clips/:id/open', () => {
     const res = await open(sealed.id, access);
     expect(res.statusCode).toBe(200);
     const payload = openClipResponseSchema.parse(res.json());
-    expect(await openText(sealed.id, access, payload)).toBe('link ile açıldı 🎉');
+    expect((await openClip(sealed.id, access, payload)).content).toEqual(
+      content('link ile açıldı 🎉'),
+    );
   });
 
   it('opens a clip with the short code', async () => {
@@ -160,7 +203,7 @@ describe('POST /api/clips/:id/open', () => {
     const res = await open(sealed.id, access);
     expect(res.statusCode).toBe(200);
     const payload = openClipResponseSchema.parse(res.json());
-    expect(await openText(sealed.id, access, payload)).toBe('kod ile açıldı');
+    expect((await openClip(sealed.id, access, payload)).content).toEqual(content('kod ile açıldı'));
   });
 
   it('rejects a wrong link token without counting attempts', async () => {

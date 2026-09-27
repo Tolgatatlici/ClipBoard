@@ -6,7 +6,12 @@ export interface RecordedRequest {
   body: string | null;
 }
 
-type Handler = (req: RecordedRequest) => { status: number; body?: unknown };
+type Handler = (req: RecordedRequest) => {
+  status: number;
+  body?: unknown;
+  /** JSON yerine ham bayt yanıtı. */
+  raw?: Uint8Array;
+};
 
 /** `fetch`'i verilen işleyiciyle değiştirir ve yapılan istekleri kaydeder. */
 export function mockFetch(handler: Handler) {
@@ -20,7 +25,8 @@ export function mockFetch(handler: Handler) {
         body: typeof init.body === 'string' ? init.body : null,
       };
       requests.push(req);
-      const { status, body } = handler(req);
+      const { status, body, raw } = handler(req);
+      if (raw) return new Response(new Uint8Array(raw), { status });
       return new Response(body === undefined ? null : JSON.stringify(body), { status });
     }),
   );

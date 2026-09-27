@@ -35,17 +35,19 @@ if method == 'code' then
 elseif expected ~= hash then
   return {'invalid'}
 end
-local d = redis.call('HMGET', k, 'kind', 'ct', 'iv', 'wk', 'wiv', 'burn', 'exp')
+local d = redis.call('HMGET', k, 'kind', 'ct', 'iv', 'wk', 'wiv', 'burn', 'exp',
+  'pws', 'pwk', 'pwiv', 'file')
 if d[6] == '1' then redis.call('DEL', k) end
-return {'ok', d[1], d[2], d[3], d[4], d[5], d[6], d[7]}
+return {'ok', d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11]}
 `;
 
+// Silinen clip'in dosya kimliğini de döner ('' = dosya yok) ki dosya da silinebilsin.
 const DELETE_SCRIPT = `
-local stored = redis.call('HGET', KEYS[1], 'del')
-if not stored then return 0 end
-if stored ~= ARGV[1] then return -1 end
+local d = redis.call('HMGET', KEYS[1], 'del', 'file')
+if not d[1] then return {'not_found'} end
+if d[1] ~= ARGV[1] then return {'forbidden'} end
 redis.call('DEL', KEYS[1])
-return 1
+return {'deleted', d[2] or ''}
 `;
 
 type ScriptReply = (string | null)[];
@@ -53,7 +55,7 @@ type ScriptReply = (string | null)[];
 interface ClipCommands {
   clipCreate(key: string, ttl: number, ...fields: string[]): Promise<number>;
   clipOpen(key: string, method: string, hash: string, maxAttempts: number): Promise<ScriptReply>;
-  clipDelete(key: string, hash: string): Promise<number>;
+  clipDelete(key: string, hash: string): Promise<ScriptReply>;
 }
 
 export interface NewClip extends CreateClipRequest {
@@ -71,7 +73,11 @@ export interface ClipMeta {
   expiresAt: number;
   burnAfterRead: boolean;
   hasCode: boolean;
+  hasPassword: boolean;
 }
+
+export type DeleteResult =
+  { status: 'deleted'; fileId: string | null } | { status: 'not_found' } | { status: 'forbidden' };
 
 export class ClipStore {
   private readonly commands: ClipCommands;
@@ -102,6 +108,12 @@ export class ClipStore {
       fields.wiv = clip.code.wrapIv;
       fields.codeAuth = hashToken(clip.code.token);
     }
+    if (clip.passwordWrap) {
+      fields.pws = clip.passwordWrap.salt;
+      fields.pwk = clip.passwordWrap.wrappedKey;
+      fields.pwiv = clip.passwordWrap.wrapIv;
+    }
+    if (clip.fileId) fields.file = clip.fileId;
     const created = await this.commands.clipCreate(
       key(clip.id),
       ttlSeconds,
@@ -111,9 +123,20 @@ export class ClipStore {
   }
 
   async meta(id: string): Promise<ClipMeta | null> {
-    const [exp, burn, codeAuth] = await this.redis.hmget(key(id), 'exp', 'burn', 'codeAuth');
+    const [exp, burn, codeAuth, pws] = await this.redis.hmget(
+      key(id),
+      'exp',
+      'burn',
+      'codeAuth',
+      'pws',
+    );
     if (exp == null) return null;
-    return { expiresAt: Number(exp), burnAfterRead: burn === '1', hasCode: codeAuth != null };
+    return {
+      expiresAt: Number(exp),
+      burnAfterRead: burn === '1',
+      hasCode: codeAuth != null,
+      hasPassword: pws != null,
+    };
   }
 
   async open(id: string, method: AccessMethod, token: string): Promise<OpenResult> {
@@ -125,14 +148,18 @@ export class ClipStore {
     );
     switch (reply[0]) {
       case 'ok': {
-        const [, kind, ciphertext, iv, wrappedKey, wrapIv, burn, exp] = reply;
+        const [, kind, ciphertext, iv, wrappedKey, wrapIv, burn, exp, pws, pwk, pwiv, file] = reply;
         return {
           status: 'ok',
           clip: {
-            kind: kind as 'text',
+            kind: kind === 'file' ? 'file' : 'text',
             ciphertext: ciphertext!,
             iv: iv!,
             ...(wrappedKey && wrapIv ? { wrappedKey, wrapIv } : {}),
+            ...(pws && pwk && pwiv
+              ? { passwordWrap: { salt: pws, wrappedKey: pwk, wrapIv: pwiv } }
+              : {}),
+            ...(file ? { fileId: file } : {}),
             burnAfterRead: burn === '1',
             expiresAt: Number(exp),
           },
@@ -149,10 +176,9 @@ export class ClipStore {
     }
   }
 
-  /** `deleted`, `not_found` veya yanlış anahtar için `forbidden` döner. */
-  async delete(id: string, deleteToken: string): Promise<'deleted' | 'not_found' | 'forbidden'> {
-    const result = await this.commands.clipDelete(key(id), hashToken(deleteToken));
-    if (result === 1) return 'deleted';
-    return result === 0 ? 'not_found' : 'forbidden';
+  async delete(id: string, deleteToken: string): Promise<DeleteResult> {
+    const [status, fileId] = await this.commands.clipDelete(key(id), hashToken(deleteToken));
+    if (status === 'deleted') return { status, fileId: fileId || null };
+    return { status: status === 'forbidden' ? 'forbidden' : 'not_found' };
   }
 }

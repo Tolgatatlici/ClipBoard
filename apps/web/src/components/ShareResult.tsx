@@ -52,6 +52,7 @@ export function ShareResult({ clip, onDone }: Props) {
         <p className="muted mt-1">
           <Countdown expiresAt={clip.expiresAt} /> sonra silinecek
           {clip.burnAfterRead && ' · ilk açılışta silinir'}
+          {clip.hasPassword && ' · parola korumalı'}
         </p>
       </div>
 

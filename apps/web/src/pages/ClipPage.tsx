@@ -1,19 +1,45 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { isShortCodeId, isValidClipId, type ClipMetaResponse } from '@clipboard/shared';
+import {
+  isShortCodeId,
+  isValidClipId,
+  PasswordRequiredError,
+  WrongPasswordError,
+  type ClipMetaResponse,
+} from '@clipboard/shared';
+import { CodeBlock, PlainText } from '../components/CodeBlock';
 import { CodeInput } from '../components/CodeInput';
 import { CopyButton } from '../components/CopyButton';
 import { Countdown } from '../components/Countdown';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { FileView } from '../components/FileView';
+import { PasswordPrompt } from '../components/PasswordPrompt';
 import { api, ApiError } from '../lib/api';
-import { openTextClip, parseFragment, type ClipSecret, type OpenedClip } from '../lib/clips';
+import {
+  decryptClip,
+  downloadFile,
+  fetchClip,
+  parseFragment,
+  type ClipSecret,
+  type FetchedClip,
+  type OpenedClip,
+} from '../lib/clips';
 import { getDeleteToken, removeDeleteToken } from '../lib/delete-tokens';
+import { saveBytes } from '../lib/download';
 
 type State =
   | { step: 'loading' }
   | { step: 'need-code'; error?: unknown }
   | { step: 'missing-key' }
   | { step: 'confirm'; meta: ClipMetaResponse; secret: ClipSecret }
+  | {
+      step: 'need-password';
+      secret: ClipSecret;
+      burnAfterRead: boolean;
+      /** İlk denemede alınan şifreli içerik; tek okumalık içerik ikinci kez alınamaz. */
+      fetched?: FetchedClip;
+      error?: unknown;
+    }
   | { step: 'opening' }
   | { step: 'ready'; clip: OpenedClip }
   | { step: 'deleted' }
@@ -42,10 +68,24 @@ function ClipLoader() {
   const pending = useRef<{ key: string; promise: Promise<State> } | null>(null);
 
   const reveal = useCallback(
-    async (secret: ClipSecret): Promise<State> => {
+    async (secret: ClipSecret, password?: string, cached?: FetchedClip): Promise<State> => {
+      let fetched = cached;
       try {
-        return { step: 'ready', clip: await openTextClip(id, secret) };
+        fetched ??= await fetchClip(id, secret);
+        return { step: 'ready', clip: await decryptClip(fetched, password) };
       } catch (error) {
+        if (
+          fetched &&
+          (error instanceof WrongPasswordError || error instanceof PasswordRequiredError)
+        ) {
+          return {
+            step: 'need-password',
+            secret,
+            fetched,
+            burnAfterRead: fetched.payload.burnAfterRead,
+            error: error instanceof WrongPasswordError ? error : undefined,
+          };
+        }
         if (secret.kind === 'code' && isRetryableCodeError(error)) {
           return { step: 'need-code', error };
         }
@@ -71,6 +111,9 @@ function ClipLoader() {
           } catch (error) {
             return { step: 'error', error };
           }
+          if (meta.hasPassword) {
+            return { step: 'need-password', secret, burnAfterRead: meta.burnAfterRead };
+          }
           if (meta.burnAfterRead) return { step: 'confirm', meta, secret };
           return reveal(secret);
         })(),
@@ -82,9 +125,9 @@ function ClipLoader() {
     };
   }, [id, hash, reveal]);
 
-  async function handleConfirm(secret: ClipSecret) {
+  async function handleConfirm(secret: ClipSecret, password?: string, cached?: FetchedClip) {
     setState({ step: 'opening' });
-    setState(await reveal(secret));
+    setState(await reveal(secret, password, cached));
   }
 
   function submitCode({ id: codeId, secret }: { id: string; secret: string }) {
@@ -124,6 +167,24 @@ function ClipLoader() {
           </div>
           {state.error !== undefined && <ErrorAlert error={state.error} />}
           <CodeInput onSubmit={submitCode} />
+        </section>
+      );
+
+    case 'need-password':
+      return (
+        <section className="card flex flex-col gap-4">
+          <div>
+            <h1 className="text-xl font-semibold">Parola korumalı içerik</h1>
+            <p className="muted">
+              Paylaşan kişinin size ilettiği parolayı girin.
+              {state.burnAfterRead &&
+                ' İçerik tek okumalıktır: parolayı ilk girişinizde sunucudan silinir, bu sayfayı kapatmadan doğru parolayı girin.'}
+            </p>
+          </div>
+          {state.error !== undefined && <ErrorAlert error={state.error} />}
+          <PasswordPrompt
+            onSubmit={(password) => void handleConfirm(state.secret, password, state.fetched)}
+          />
         </section>
       );
 
@@ -194,23 +255,22 @@ interface ClipViewProps {
 
 function ClipView({ clip, deleteToken, onDelete }: ClipViewProps) {
   const [deleting, setDeleting] = useState(false);
-
-  function download() {
-    const url = URL.createObjectURL(new Blob([clip.text], { type: 'text/plain;charset=utf-8' }));
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'clipboard.txt';
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
+  const { content, file } = clip;
+  const loadFile = useCallback(() => downloadFile(file!), [file]);
 
   return (
     <section className="card flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-xl font-semibold">Paylaşılan içerik</h1>
+        <h1 className="text-xl font-semibold">
+          {content.kind === 'file' ? 'Paylaşılan dosya' : 'Paylaşılan içerik'}
+        </h1>
         <p className="muted">
           {clip.burnAfterRead ? (
-            'Sunucudan silindi; bu sayfayı kapatınca tekrar açılamaz.'
+            content.kind === 'file' ? (
+              'Sunucudan silindi; dosyayı 15 dakika içinde indirin.'
+            ) : (
+              'Sunucudan silindi; bu sayfayı kapatınca tekrar açılamaz.'
+            )
           ) : (
             <>
               <Countdown expiresAt={clip.expiresAt} /> sonra silinecek
@@ -218,17 +278,30 @@ function ClipView({ clip, deleteToken, onDelete }: ClipViewProps) {
           )}
         </p>
       </div>
-      <pre
-        data-testid="clip-content"
-        className="max-h-[60vh] overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-sm break-words whitespace-pre-wrap dark:border-slate-800 dark:bg-slate-950"
-      >
-        {clip.text}
-      </pre>
+
+      {content.kind === 'file' ? (
+        file && (
+          <FileView name={content.name} mime={content.mime} size={content.size} load={loadFile} />
+        )
+      ) : content.format === 'code' ? (
+        <CodeBlock text={content.text} />
+      ) : (
+        <PlainText text={content.text} />
+      )}
+
       <div className="flex flex-wrap gap-2">
-        <CopyButton text={clip.text} className="btn-primary" />
-        <button type="button" className="btn-secondary" onClick={download}>
-          İndir (.txt)
-        </button>
+        {content.kind === 'text' && (
+          <>
+            <CopyButton text={content.text} className="btn-primary" />
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => saveBytes(content.text, 'clipboard.txt', 'text/plain;charset=utf-8')}
+            >
+              İndir (.txt)
+            </button>
+          </>
+        )}
         {deleteToken && !clip.burnAfterRead && (
           <button
             type="button"

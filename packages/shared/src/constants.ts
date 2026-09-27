@@ -18,10 +18,14 @@ export const LIMITS = {
   maxTextBytes: 100 * 1024,
   /** Dosya yüklemeleri için en fazla boyut (bayt). */
   maxFileBytes: 25 * 1024 * 1024,
+  /** Şifreli içerik başlığı (tür, biçim, dosya adı) için ayrılan en fazla boyut (bayt). */
+  maxContentHeaderBytes: 1024,
   /** Canlı odada tek WebSocket mesajı için en fazla boyut (bayt). */
   maxWsMessageBytes: 128 * 1024,
   /** Odada saklanan en fazla öğe sayısı. */
   maxRoomHistory: 50,
+  /** Bir odaya aynı anda bağlanabilecek en fazla cihaz sayısı. */
+  maxRoomPeers: 20,
 } as const;
 
 /** Kısa kodla açmada izin verilen hatalı deneme sayısı; aşılınca kodla erişim kilitlenir. */

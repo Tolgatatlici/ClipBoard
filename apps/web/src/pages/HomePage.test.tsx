@@ -55,6 +55,34 @@ describe('HomePage', () => {
     expect(screen.getByRole('radio', { name: '1 gün' })).toBeChecked();
   });
 
+  it('disables the short code when a password is set', async () => {
+    const requests = mockFetch((req) => ({
+      status: 201,
+      body: {
+        id: JSON.parse(req.body!).id,
+        deleteToken: 'D'.repeat(43),
+        expiresAt: Date.now() + 3_600_000,
+      },
+    }));
+    renderHome();
+    await userEvent.type(screen.getByRole('textbox', { name: /metni/ }), 'x');
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Parola ile koru' }));
+    expect(screen.getByRole('checkbox', { name: 'Kısa kod oluştur' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Kısa kod oluştur' })).not.toBeChecked();
+
+    const submit = screen.getByRole('button', { name: 'Şifrele ve paylaş' });
+    expect(submit).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('Parola'), 'gizli parola');
+    await userEvent.click(submit);
+
+    await screen.findByTestId('share-link');
+    expect(screen.queryByTestId('share-code')).not.toBeInTheDocument();
+    const sent = JSON.parse(requests[0]!.body!);
+    expect(sent.passwordWrap).toBeDefined();
+    expect(sent.code).toBeUndefined();
+    expect(requests[0]!.body).not.toContain('gizli parola');
+  });
+
   it('shows an error when the server is unreachable', async () => {
     vi.stubGlobal(
       'fetch',

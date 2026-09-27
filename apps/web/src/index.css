@@ -33,3 +33,43 @@
 @utility muted {
   @apply text-sm text-slate-500 dark:text-slate-400;
 }
+
+/* Söz dizimi vurgulama (lowlight / highlight.js sınıfları) */
+.hljs-comment,
+.hljs-quote {
+  @apply text-slate-500 italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag {
+  @apply text-rose-600 dark:text-rose-400;
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  @apply text-emerald-700 dark:text-emerald-400;
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-variable,
+.hljs-template-variable {
+  @apply text-amber-700 dark:text-amber-300;
+}
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-selector-id {
+  @apply text-indigo-700 dark:text-indigo-300;
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-type,
+.hljs-built_in,
+.hljs-meta {
+  @apply text-sky-700 dark:text-sky-300;
+}
+.hljs-deletion {
+  @apply text-red-700 dark:text-red-400;
+}

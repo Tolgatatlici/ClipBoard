@@ -1,5 +1,6 @@
-import { DecryptionError } from '@clipboard/shared';
+import { DecryptionError, WrongPasswordError } from '@clipboard/shared';
 import { ApiError, NetworkError } from './api';
+import { FileTooLargeError } from './clips';
 
 /** Hatayı kullanıcıya gösterilecek Türkçe mesaja çevirir. */
 export function describeError(error: unknown): string {
@@ -15,6 +16,8 @@ export function describeError(error: unknown): string {
         return 'Çok fazla hatalı deneme yapıldığı için bu içerik artık kodla açılamıyor. Paylaşım linkini veya QR kodu kullanın.';
       case 'rate_limited':
         return 'Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.';
+      case 'file_missing':
+        return 'Dosya yüklemesi tamamlanamadı. Lütfen tekrar deneyin.';
       case 'invalid_request':
         return 'İstek geçersiz. Sayfayı yenileyip tekrar deneyin.';
       default:
@@ -23,6 +26,12 @@ export function describeError(error: unknown): string {
   }
   if (error instanceof NetworkError) {
     return 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.';
+  }
+  if (error instanceof WrongPasswordError) {
+    return 'Parola yanlış.';
+  }
+  if (error instanceof FileTooLargeError) {
+    return 'Dosya çok büyük. En fazla 25 MB paylaşabilirsiniz.';
   }
   if (error instanceof DecryptionError) {
     return 'İçerik çözülemedi. Link bozuk ya da eksik kopyalanmış olabilir.';

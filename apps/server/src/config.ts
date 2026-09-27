@@ -11,6 +11,11 @@ const envSchema = z.object({
   /** IP başına dakikadaki en fazla istek sayısı (genel sınır). */
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   REDIS_URL: z.url().default('redis://localhost:6379'),
+  /** `local`: dosyalar sunucu diskinde (geliştirme/tek sunucu). `s3`: S3 uyumlu depolama. */
+  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  STORAGE_DIR: z.string().default('./data/files'),
+  /** Yerel sürücünün yükleme/indirme linklerini imzalamak için; boşsa açılışta rastgele üretilir. */
+  FILE_SIGNING_SECRET: z.string().min(32).optional(),
   S3_ENDPOINT: z.url().default('http://localhost:9000'),
   S3_REGION: z.string().default('auto'),
   S3_BUCKET: z.string().default('clipboard-files'),

@@ -6,16 +6,27 @@ import type { Redis } from 'ioredis';
 import { MAX_CODE_ATTEMPTS, type ErrorResponse, type HealthResponse } from '@clipboard/shared';
 import type { Config } from './config.js';
 import { clipRoutes } from './routes/clips.js';
+import { fileRoutes } from './routes/files.js';
 import { ClipStore } from './services/clip-store.js';
+import { FileService } from './services/file-service.js';
+import { createStorage, type FileStorage } from './services/storage/index.js';
 
 export interface AppDeps {
   redis: Redis;
+  /** Varsayılan: yapılandırmaya göre yerel disk veya S3. */
+  storage?: FileStorage;
 }
+
+/** Süresi dolan dosyaların ne sıklıkla silineceği. */
+const FILE_SWEEP_INTERVAL_MS = 60_000;
 
 /** En büyük şifreli metin (~137 KB) ve JSON zarfı için yeterli. */
 const BODY_LIMIT = 256 * 1024;
 
-export async function buildApp(config: Config, { redis }: AppDeps): Promise<FastifyInstance> {
+export async function buildApp(
+  config: Config,
+  { redis, storage = createStorage(config) }: AppDeps,
+): Promise<FastifyInstance> {
   const app = Fastify({
     bodyLimit: BODY_LIMIT,
     trustProxy: config.TRUST_PROXY,
@@ -50,7 +61,7 @@ export async function buildApp(config: Config, { redis }: AppDeps): Promise<Fast
   await app.register(helmet);
   await app.register(cors, {
     origin: config.CORS_ORIGIN.split(',').map((origin) => origin.trim()),
-    methods: ['GET', 'POST', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   await app.register(rateLimit, {
@@ -69,13 +80,22 @@ export async function buildApp(config: Config, { redis }: AppDeps): Promise<Fast
     return { status: 'ok', uptime: process.uptime() };
   });
 
+  const files = new FileService(redis, storage);
   await app.register(clipRoutes, {
     store: new ClipStore(redis, MAX_CODE_ATTEMPTS),
+    files,
     rateLimits: {
       create: Math.min(30, config.RATE_LIMIT_MAX),
       open: Math.min(20, config.RATE_LIMIT_MAX),
     },
   });
+  await app.register(fileRoutes, { files, rateLimit: Math.min(20, config.RATE_LIMIT_MAX) });
+
+  const sweeper = setInterval(() => {
+    files.sweep().catch((err: unknown) => app.log.error(err, 'file sweep failed'));
+  }, FILE_SWEEP_INTERVAL_MS);
+  sweeper.unref();
+  app.addHook('onClose', async () => clearInterval(sweeper));
 
   return app;
 }

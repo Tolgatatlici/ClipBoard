@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import {
   clipIdSchema,
   createClipRequestSchema,
@@ -7,27 +7,18 @@ import {
   TTL_OPTIONS,
   type ClipMetaResponse,
   type CreateClipResponse,
-  type ErrorResponse,
 } from '@clipboard/shared';
 import type { ClipStore } from '../services/clip-store.js';
-import type { z } from 'zod';
+import { BURN_DOWNLOAD_GRACE_MS, type FileService } from '../services/file-service.js';
+import { sendError, sendInvalid as invalid } from './errors.js';
 
 interface Options {
   store: ClipStore;
+  files: FileService;
   rateLimits: { create: number; open: number };
 }
 
-function sendError(reply: FastifyReply, status: number, body: ErrorResponse) {
-  return reply.code(status).send(body);
-}
-
-function invalid(reply: FastifyReply, error: z.ZodError) {
-  const issue = error.issues[0];
-  const message = issue ? `${issue.path.join('.') || 'body'}: ${issue.message}` : undefined;
-  return sendError(reply, 400, { error: 'invalid_request', message });
-}
-
-export async function clipRoutes(app: FastifyInstance, { store, rateLimits }: Options) {
+export async function clipRoutes(app: FastifyInstance, { store, files, rateLimits }: Options) {
   // İçerik şifreli olsa da yanıtlar hiçbir ara katmanda önbelleğe alınmamalı.
   app.addHook('onSend', async (_request, reply) => {
     reply.header('Cache-Control', 'no-store');
@@ -40,11 +31,18 @@ export async function clipRoutes(app: FastifyInstance, { store, rateLimits }: Op
       const parsed = createClipRequestSchema.safeParse(request.body);
       if (!parsed.success) return invalid(reply, parsed.error);
 
+      const { fileId } = parsed.data;
+      if (fileId && !(await files.isUploaded(fileId))) {
+        return sendError(reply, 400, { error: 'file_missing' });
+      }
+
       const ttlSeconds = TTL_OPTIONS[parsed.data.ttl];
       const deleteToken = randomBytes(32).toString('base64url');
       const expiresAt = Date.now() + ttlSeconds * 1000;
       const created = await store.create({ ...parsed.data, deleteToken, expiresAt }, ttlSeconds);
       if (!created) return sendError(reply, 409, { error: 'id_taken' });
+      // Dosya, clip'le birlikte silinir.
+      if (fileId) await files.setDeleteAt(fileId, expiresAt);
 
       const body: CreateClipResponse = { id: parsed.data.id, deleteToken, expiresAt };
       return reply.code(201).send(body);
@@ -74,6 +72,9 @@ export async function clipRoutes(app: FastifyInstance, { store, rateLimits }: Op
       const result = await store.open(request.params.id, parsed.data.method, parsed.data.token);
       switch (result.status) {
         case 'ok':
+          if (result.clip.burnAfterRead && result.clip.fileId) {
+            await files.deleteNoLaterThan(result.clip.fileId, Date.now() + BURN_DOWNLOAD_GRACE_MS);
+          }
           return result.clip;
         case 'invalid':
           return sendError(reply, 401, {
@@ -95,8 +96,9 @@ export async function clipRoutes(app: FastifyInstance, { store, rateLimits }: Op
       return sendError(reply, 404, { error: 'not_found' });
     }
     const result = await store.delete(request.params.id, token);
-    if (result === 'not_found') return sendError(reply, 404, { error: 'not_found' });
-    if (result === 'forbidden') return sendError(reply, 403, { error: 'invalid_token' });
+    if (result.status === 'not_found') return sendError(reply, 404, { error: 'not_found' });
+    if (result.status === 'forbidden') return sendError(reply, 403, { error: 'invalid_token' });
+    if (result.fileId) await files.deleteNow(result.fileId);
     return reply.code(204).send();
   });
 }

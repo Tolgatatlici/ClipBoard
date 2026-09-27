@@ -284,14 +284,14 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 **Dosya paylaşımı**
 
-- [ ] T2.8 S3/R2 servisi, presigned PUT/GET, lifecycle kuralı — 1 g
-- [ ] T2.9 İstemci tarafında dosya şifreleme (büyük dosya için chunk'lı AES-GCM), yükleme ilerleme çubuğu — 1.5 g
-- [ ] T2.10 DropZone + panodan görsel yapıştırma (`paste` event) + görsel önizleme — 1 g
+- [x] T2.8 S3/R2 servisi, presigned PUT/GET, lifecycle kuralı — 1 g _(+ geliştirme için yerel disk sürücüsü)_
+- [x] T2.9 İstemci tarafında dosya şifreleme, yükleme ilerleme çubuğu — 1.5 g _(25 MB sınırında tek parça AES-GCM yeterli; limit büyürse chunk'lı şifrelemeye geçilir)_
+- [x] T2.10 DropZone + panodan görsel yapıştırma (`paste` event) + görsel önizleme — 1 g
 
 **Diğer**
 
-- [ ] T2.11 Parola koruması (UI + PBKDF2 akışı) — 0.5 g
-- [ ] T2.12 Kod modu: söz dizimi vurgulama (Shiki / highlight.js, lazy load) — 0.5 g
+- [x] T2.11 Parola koruması (UI + PBKDF2 akışı) — 0.5 g
+- [x] T2.12 Kod modu: söz dizimi vurgulama (lowlight, lazy load, innerHTML'siz) — 0.5 g
 - [ ] T2.13 Testler: WS entegrasyon testleri, iki tarayıcılı Playwright oda senaryosu — 1.5 g
 
 **Kabul kriteri:** İki cihaz aynı odaya bağlandığında birinin gönderdiği metin/dosya diğerinde < 1 sn içinde görünüyor; bağlantı kopunca otomatik yeniden bağlanıyor.
