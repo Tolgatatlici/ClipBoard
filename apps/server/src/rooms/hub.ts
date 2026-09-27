@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Redis } from 'ioredis';
 import type { WebSocket } from 'ws';
+import type { Metrics } from '../metrics.js';
 import {
   clientMessageSchema,
   LIMITS,
@@ -36,6 +37,7 @@ export interface RoomHubOptions {
   presenceTimeoutMs?: number;
   messageLimit?: { count: number; windowMs: number };
   maxPeers?: number;
+  metrics?: Metrics;
 }
 
 /**
@@ -48,6 +50,7 @@ export class RoomHub {
   private readonly presenceTimeoutMs: number;
   private readonly messageLimit: { count: number; windowMs: number };
   private readonly maxPeers: number;
+  private readonly metrics?: Metrics;
   private closing = false;
 
   constructor(
@@ -60,6 +63,7 @@ export class RoomHub {
     this.presenceTimeoutMs = options.presenceTimeoutMs ?? heartbeatMs * 3;
     this.messageLimit = options.messageLimit ?? { count: 20, windowMs: 10_000 };
     this.maxPeers = options.maxPeers ?? LIMITS.maxRoomPeers;
+    this.metrics = options.metrics;
 
     subscriber.on('message', (name: string, raw: string) => {
       if (!name.startsWith(CHANNEL_PREFIX) || !name.endsWith(CHANNEL_SUFFIX)) return;
@@ -112,6 +116,7 @@ export class RoomHub {
       await this.subscriber.subscribe(channel(roomId));
     }
     local.add(peer);
+    this.metrics?.roomConnections.inc();
 
     await this.redis
       .multi()
@@ -130,7 +135,9 @@ export class RoomHub {
 
   private async leave(peer: Peer) {
     const local = this.rooms.get(peer.roomId);
-    if (!local?.delete(peer) || this.closing) return;
+    if (!local?.delete(peer)) return;
+    this.metrics?.roomConnections.dec();
+    if (this.closing) return;
     if (local.size === 0) {
       this.rooms.delete(peer.roomId);
       await this.subscriber.unsubscribe(channel(peer.roomId));
@@ -160,6 +167,7 @@ export class RoomHub {
 
     const message = parsed.data;
     const { roomId } = peer;
+    this.metrics?.roomMessages.inc({ type: message.type });
     switch (message.type) {
       case 'item': {
         const item: RoomItem = {

@@ -63,6 +63,8 @@ describe('S3FileStorage', () => {
     expect(url.pathname).toBe('/bucket/files/abc');
     expect(url.searchParams.get('X-Amz-Expires')).toBe('900');
     expect(url.searchParams.get('X-Amz-SignedHeaders')).toContain('content-length');
+    // Boş gövdenin sağlama toplamı eklenirse gerçek yüklemeler reddedilir.
+    expect([...url.searchParams.keys()].some((key) => key.includes('checksum'))).toBe(false);
   });
 
   it('presigns downloads as attachments', async () => {

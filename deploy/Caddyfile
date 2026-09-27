@@ -1,0 +1,12 @@
+# TLS sertifikası otomatik alınır (Let's Encrypt). DOMAIN ortam değişkeni gerekir.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Erişim günlüğü bilinçli olarak kapalı: IP adresi ve istek yolu tutulmaz.
+	reverse_proxy app:3000
+}
+
+# www → çıplak alan adı
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}

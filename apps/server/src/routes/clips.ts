@@ -8,6 +8,7 @@ import {
   type ClipMetaResponse,
   type CreateClipResponse,
 } from '@clipboard/shared';
+import type { Metrics } from '../metrics.js';
 import type { ClipStore } from '../services/clip-store.js';
 import { BURN_DOWNLOAD_GRACE_MS, type FileService } from '../services/file-service.js';
 import { sendError, sendInvalid as invalid } from './errors.js';
@@ -15,10 +16,12 @@ import { sendError, sendInvalid as invalid } from './errors.js';
 interface Options {
   store: ClipStore;
   files: FileService;
+  metrics: Metrics;
   rateLimits: { create: number; open: number };
 }
 
-export async function clipRoutes(app: FastifyInstance, { store, files, rateLimits }: Options) {
+export async function clipRoutes(app: FastifyInstance, options: Options) {
+  const { store, files, metrics, rateLimits } = options;
   // İçerik şifreli olsa da yanıtlar hiçbir ara katmanda önbelleğe alınmamalı.
   app.addHook('onSend', async (_request, reply) => {
     reply.header('Cache-Control', 'no-store');
@@ -43,6 +46,12 @@ export async function clipRoutes(app: FastifyInstance, { store, files, rateLimit
       if (!created) return sendError(reply, 409, { error: 'id_taken' });
       // Dosya, clip'le birlikte silinir.
       if (fileId) await files.setDeleteAt(fileId, expiresAt);
+      metrics.clipsCreated.inc({
+        kind: parsed.data.kind,
+        code: String(!!parsed.data.code),
+        password: String(!!parsed.data.passwordWrap),
+        burn: String(parsed.data.burnAfterRead),
+      });
 
       const body: CreateClipResponse = { id: parsed.data.id, deleteToken, expiresAt };
       return reply.code(201).send(body);
@@ -70,6 +79,7 @@ export async function clipRoutes(app: FastifyInstance, { store, files, rateLimit
       if (!parsed.success) return invalid(reply, parsed.error);
 
       const result = await store.open(request.params.id, parsed.data.method, parsed.data.token);
+      metrics.clipOpens.inc({ method: parsed.data.method, result: result.status });
       switch (result.status) {
         case 'ok':
           if (result.clip.burnAfterRead && result.clip.fileId) {

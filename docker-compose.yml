@@ -1,4 +1,4 @@
-# Lokal geliştirme için yardımcı servisler.
+# Lokal geliştirme için yardımcı servisler: `pnpm services:up`
 services:
   redis:
     image: redis:7-alpine
@@ -11,35 +11,25 @@ services:
       timeout: 3s
       retries: 5
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ':9001'
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+  # S3 uyumlu depolama (STORAGE_DRIVER=s3 ile denemek için). Kimlik bilgileri
+  # deploy/seaweedfs/s3.json dosyasında; imzasız istekler reddedilir.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '8333:8333'
     volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ['CMD', 'mc', 'ready', 'local']
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      - ./deploy/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+      - s3-data:/data
 
-  # Bucket'ı oluşturur ve dosyalar için 7 günlük otomatik silme kuralı ekler.
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin &&
-      mc mb --ignore-existing local/clipboard-files &&
-      mc ilm rule add --expire-days 7 local/clipboard-files || true
-      "
+  # Bucket'ı oluşturur.
+  s3-init:
+    image: chrislusf/seaweedfs:latest
+    depends_on: [s3]
+    restart: on-failure
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - 'sleep 3 && echo "s3.bucket.create -name clipboard-files" | weed shell -master=s3:9333'
 
 volumes:
-  minio-data:
+  s3-data:

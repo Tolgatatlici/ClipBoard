@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "clipboard",
+      "credentials": [{ "accessKey": "clipboard", "secretKey": "clipboard-dev-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

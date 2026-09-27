@@ -26,6 +26,10 @@ export class S3FileStorage implements FileStorage {
       endpoint: options.endpoint,
       region: options.region,
       forcePathStyle: true,
+      // SDK varsayılan olarak imzalı linke boş gövdenin CRC32'sini ekler; tarayıcının
+      // yüklediği gerçek veriyle eşleşmediği için sunucu yüklemeyi reddeder.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
       credentials: {
         accessKeyId: options.accessKeyId,
         secretAccessKey: options.secretAccessKey,

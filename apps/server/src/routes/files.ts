@@ -7,6 +7,7 @@ import {
   type CreateFileResponse,
   type FileDownloadResponse,
 } from '@clipboard/shared';
+import type { Metrics } from '../metrics.js';
 import type { FileService } from '../services/file-service.js';
 import { LocalFileStorage } from '../services/storage/index.js';
 import { UploadSizeError } from '../services/storage/local.js';
@@ -14,10 +15,11 @@ import { sendError, sendInvalid } from './errors.js';
 
 interface Options {
   files: FileService;
+  metrics: Metrics;
   rateLimit: number;
 }
 
-export async function fileRoutes(app: FastifyInstance, { files, rateLimit }: Options) {
+export async function fileRoutes(app: FastifyInstance, { files, metrics, rateLimit }: Options) {
   app.addHook('onSend', async (_request, reply) => {
     reply.header('Cache-Control', 'no-store');
   });
@@ -29,6 +31,7 @@ export async function fileRoutes(app: FastifyInstance, { files, rateLimit }: Opt
       const parsed = createFileRequestSchema.safeParse(request.body);
       if (!parsed.success) return sendInvalid(reply, parsed.error);
       const created = await files.create(parsed.data.size, TTL_OPTIONS[parsed.data.ttl]);
+      metrics.filesCreated.inc();
       const body: CreateFileResponse = {
         fileId: created.fileId,
         upload: { method: 'PUT', ...created.upload },

@@ -1,8 +1,5 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
-
-async function device(browser: Browser) {
-  return (await browser.newContext()).newPage();
-}
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /** Ana sayfadan yeni bir oda açar ve oda kodunu döner. */
 async function createRoom(page: Page) {
@@ -24,13 +21,13 @@ async function sendText(page: Page, text: string) {
   await page.getByRole('button', { name: 'Gönder', exact: true }).click();
 }
 
-test('syncs text between two devices in real time', async ({ page, browser }) => {
+test('syncs text between two devices in real time', async ({ page, newDevice }) => {
   const frames: string[] = [];
   page.on('websocket', (ws) => ws.on('framesent', (frame) => frames.push(String(frame.payload))));
 
   const code = await createRoom(page);
   expect(code).toMatch(/^[0-9A-Z]{5}-[0-9A-Z]{5}$/);
-  const other = await device(browser);
+  const other = await newDevice();
   await joinRoom(other, code.toLowerCase());
   await expect(page.getByTestId('room-status')).toHaveText('Bağlı · 2 cihaz');
   await expect(other.getByTestId('room-status')).toHaveText('Bağlı · 2 cihaz');
@@ -54,18 +51,18 @@ test('syncs text between two devices in real time', async ({ page, browser }) =>
   );
 });
 
-test('shows when the other device is typing', async ({ page, browser }) => {
+test('shows when the other device is typing', async ({ page, newDevice }) => {
   const code = await createRoom(page);
-  const other = await device(browser);
+  const other = await newDevice();
   await joinRoom(other, code);
   await other.getByLabel('Odaya gönder').pressSequentially('yazıyorum');
   await expect(page.getByTestId('typing-indicator')).toBeVisible();
   await expect(page.getByTestId('typing-indicator')).toBeHidden({ timeout: 5000 });
 });
 
-test('sends files to the room', async ({ page, browser }) => {
+test('sends files to the room', async ({ page, newDevice }) => {
   const code = await createRoom(page);
-  const other = await device(browser);
+  const other = await newDevice();
   await joinRoom(other, code);
 
   const png = Buffer.from(
@@ -83,7 +80,7 @@ test('sends files to the room', async ({ page, browser }) => {
 
 test('late joiners get the history and clearing empties every device', async ({
   page,
-  browser,
+  newDevice,
 }) => {
   const code = await createRoom(page);
   await sendText(page, 'ilk mesaj');
@@ -91,7 +88,7 @@ test('late joiners get the history and clearing empties every device', async ({
   await expect(page.getByTestId('room-item')).toHaveCount(2);
 
   // Link ile katılım.
-  const other = await device(browser);
+  const other = await newDevice();
   await other.goto(`/r#${code}`);
   await expect(other.getByTestId('room-item')).toHaveCount(2);
   await expect(other.getByTestId('room-item').first()).toContainText('ikinci mesaj');

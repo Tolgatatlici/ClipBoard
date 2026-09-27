@@ -1,4 +1,5 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 interface ShareOptions {
   withCode?: boolean;
@@ -26,35 +27,29 @@ async function share(page: Page, text: string, options: ShareOptions = {}) {
   return { requestBody: request.postData() ?? '', link, code };
 }
 
-/** Ayrı bir tarayıcı bağlamı: çerez ve depolama paylaşmayan "ikinci cihaz". */
-async function otherDevice(browser: Browser) {
-  const context = await browser.newContext();
-  return context.newPage();
-}
-
 const TEXT = 'Çok gizli metin 🔐\nikinci satır <b>html değil</b>';
 
-test('shares text with a short code between two devices', async ({ page, browser }) => {
+test('shares text with a short code between two devices', async ({ page, newDevice }) => {
   const { requestBody, code } = await share(page, TEXT);
   expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}$/);
   expect(requestBody).not.toContain('gizli');
   expect(requestBody).not.toContain(code!.split('-')[1]);
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   await other.goto('/');
   await other.getByLabel('Paylaşım kodu').fill(code!.toLowerCase());
   await other.getByRole('button', { name: 'Aç' }).click();
   await expect(other.getByTestId('clip-content')).toHaveText(TEXT);
 });
 
-test('shares text with a link and shows a QR code', async ({ page, browser }) => {
+test('shares text with a link and shows a QR code', async ({ page, newDevice }) => {
   const { requestBody, link } = await share(page, TEXT, { withCode: false });
   const key = link.split('#k=')[1]!;
   expect(key).toHaveLength(43);
   expect(requestBody).not.toContain(key);
   await expect(page.getByRole('img', { name: /QR/ })).toBeVisible();
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   const apiRequests: string[] = [];
   other.on('request', (req) => apiRequests.push(req.url() + (req.postData() ?? '')));
   await other.goto(link);
@@ -62,10 +57,10 @@ test('shares text with a link and shows a QR code', async ({ page, browser }) =>
   for (const req of apiRequests) expect(req).not.toContain(key);
 });
 
-test('burn-after-read content can only be opened once', async ({ page, browser }) => {
+test('burn-after-read content can only be opened once', async ({ page, newDevice }) => {
   const { link } = await share(page, 'tek seferlik', { burnAfterRead: true });
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   await other.goto(link);
   await other.getByRole('button', { name: 'İçeriği göster' }).click();
   await expect(other.getByTestId('clip-content')).toHaveText('tek seferlik');
@@ -74,12 +69,12 @@ test('burn-after-read content can only be opened once', async ({ page, browser }
   await expect(other.getByRole('alert')).toContainText('İçerik bulunamadı');
 });
 
-test('shows remaining attempts for a wrong code', async ({ page, browser }) => {
+test('shows remaining attempts for a wrong code', async ({ page, newDevice }) => {
   const { code } = await share(page, 'x');
   const [id, secret] = code!.split('-');
   const wrong = secret === 'AAAA' ? 'BBBB' : 'AAAA';
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   await other.goto(`/c/${id}#s=${wrong}`);
   await expect(other.getByRole('alert')).toContainText('Kalan deneme hakkı: 4');
 
@@ -88,12 +83,12 @@ test('shows remaining attempts for a wrong code', async ({ page, browser }) => {
   await expect(other.getByTestId('clip-content')).toHaveText('x');
 });
 
-test('the creator can delete a clip', async ({ page, browser }) => {
+test('the creator can delete a clip', async ({ page, newDevice }) => {
   const { link } = await share(page, 'silinecek');
   await page.getByRole('button', { name: 'Şimdi sil' }).click();
   await expect(page.getByRole('heading', { name: 'İçerik silindi' })).toBeVisible();
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   await other.goto(link);
   await expect(other.getByRole('alert')).toContainText('İçerik bulunamadı');
 });

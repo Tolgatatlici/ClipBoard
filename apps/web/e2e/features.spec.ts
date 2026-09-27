@@ -1,9 +1,5 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
-
-async function otherDevice(browser: Browser) {
-  const context = await browser.newContext();
-  return context.newPage();
-}
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 async function submit(page: Page) {
   await page.getByRole('button', { name: 'Şifrele ve paylaş' }).click();
@@ -16,7 +12,7 @@ const PNG = Buffer.from(
   'base64',
 );
 
-test('highlights shared code', async ({ page, browser }) => {
+test('highlights shared code', async ({ page, newDevice }) => {
   await page.goto('/');
   await page.getByRole('radio', { name: 'Kod' }).check({ force: true });
   await page
@@ -24,13 +20,13 @@ test('highlights shared code', async ({ page, browser }) => {
     .fill('def selam(ad):\n    return f"Merhaba {ad}"\n');
   const link = await submit(page);
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   await other.goto(link);
   await expect(other.getByTestId('code-language')).toHaveText('python');
   await expect(other.locator('.hljs-keyword').first()).toHaveText('def');
 });
 
-test('password protected clips need the password', async ({ page, browser }) => {
+test('password protected clips need the password', async ({ page, newDevice }) => {
   await page.goto('/');
   await page.getByRole('textbox', { name: /metni/ }).fill('parolalı sır');
   await page.getByRole('checkbox', { name: 'Parola ile koru' }).check();
@@ -40,7 +36,7 @@ test('password protected clips need the password', async ({ page, browser }) => 
   expect((await requestPromise).postData()).not.toContain('at-gözlüğü');
   await expect(page.getByTestId('share-code')).toHaveCount(0);
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   await other.goto(link);
   await other.getByLabel('Parola').fill('yanlış');
   await other.getByRole('button', { name: 'Aç' }).click();
@@ -50,7 +46,7 @@ test('password protected clips need the password', async ({ page, browser }) => 
   await expect(other.getByTestId('clip-content')).toHaveText('parolalı sır');
 });
 
-test('shares an image file end to end', async ({ page, browser }) => {
+test('shares an image file end to end', async ({ page, newDevice }) => {
   await page.goto('/');
   await page.getByTestId('file-input').setInputFiles({
     name: 'ekran görüntüsü.png',
@@ -69,7 +65,7 @@ test('shares an image file end to end', async ({ page, browser }) => {
   expect(uploads).toHaveLength(1);
   expect(uploads[0]!.includes(PNG.subarray(0, 16))).toBe(false);
 
-  const other = await otherDevice(browser);
+  const other = await newDevice();
   await other.goto(link);
   await expect(other.getByTestId('file-name')).toHaveText('ekran görüntüsü.png');
   await expect(other.getByTestId('file-preview')).toBeVisible();
@@ -83,7 +79,7 @@ test('shares an image file end to end', async ({ page, browser }) => {
   expect(Buffer.concat(chunks)).toEqual(PNG);
 
   // Aynı dosya kısa kodla da açılır.
-  const third = await otherDevice(browser);
+  const third = await newDevice();
   await third.goto('/');
   await third.getByLabel('Paylaşım kodu').fill(code);
   await third.getByRole('button', { name: 'Aç' }).click();

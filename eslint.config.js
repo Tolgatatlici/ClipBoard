@@ -14,7 +14,14 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
-    files: ['apps/web/**/*.{ts,tsx}'],
+    // Playwright testleri ve yapılandırmalar Node'da çalışır; fikstürlerin `use`
+    // parametresi React hook'u değildir ve `{}` deseni Playwright'ın zorunlu kıldığı biçimdir.
+    files: ['apps/web/e2e/**/*.ts', 'apps/web/*.config.ts'],
+    languageOptions: { globals: globals.node },
+    rules: { 'no-empty-pattern': 'off' },
+  },
+  {
+    files: ['apps/web/src/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
     rules: {

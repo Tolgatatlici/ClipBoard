@@ -1,0 +1,57 @@
+# Tek sunuculu üretim kurulumu: Caddy (HTTPS) → uygulama → Redis.
+#
+#   cd deploy
+#   cp .env.prod.example .env.prod   # değerleri doldurun
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN gerekli}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+  app:
+    image: clipboard:latest
+    build:
+      context: ..
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      REDIS_URL: redis://redis:6379
+      TRUST_PROXY: 'true'
+      CORS_ORIGIN: https://${DOMAIN}
+    volumes:
+      - files:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # İçerik zaten geçici; AOF yalnızca yeniden başlatmada aktif paylaşımlar kaybolmasın diye.
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  caddy-data:
+  caddy-config:
+  files:
+  redis-data:
