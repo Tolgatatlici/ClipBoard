@@ -24,10 +24,17 @@ const ttlAllowedWithCode = (ttl: TtlOption) => TTL_OPTIONS[ttl] <= TTL_OPTIONS[M
 const segmentClass =
   'cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-sm transition has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-indigo-500 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 dark:border-slate-700';
 
-export function ShareForm({ onCreated }: { onCreated(clip: CreatedClip): void }) {
-  const [text, setText] = useState('');
+interface ShareFormProps {
+  onCreated(clip: CreatedClip): void;
+  /** Sistem paylaşım menüsünden gelen içerik (bileşen yeniden kurulunca uygulanır). */
+  initialText?: string;
+  initialFile?: File | null;
+}
+
+export function ShareForm({ onCreated, initialText = '', initialFile = null }: ShareFormProps) {
+  const [text, setText] = useState(initialText);
   const [format, setFormat] = useState<TextFormat>('plain');
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(initialFile);
   const [ttl, setTtl] = useState<TtlOption>(DEFAULT_TTL);
   const [burnAfterRead, setBurnAfterRead] = useState(false);
   const [wantCode, setWantCode] = useState(true);

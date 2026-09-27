@@ -39,5 +39,19 @@ await page.screenshot({ path: `${publicDir}og-image.png` });
 await page.setViewportSize({ width: 180, height: 180 });
 await page.setContent(touchHtml);
 await page.screenshot({ path: `${publicDir}apple-touch-icon.png` });
+// PWA simgeleri; maskeli sürümde simge güvenli alanda (ortadaki %60) kalır.
+for (const [file, size, scale] of [
+  ['pwa-192.png', 192, 0.62],
+  ['pwa-512.png', 512, 0.62],
+  ['pwa-maskable-512.png', 512, 0.5],
+] as const) {
+  const inner = Math.round(size * scale);
+  await page.setViewportSize({ width: size, height: size });
+  await page.setContent(`<!doctype html><html><body style="margin:0">
+<div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;background:#4f46e5;color:#fff">
+  <span style="width:${inner}px;height:${inner}px">${icon}</span>
+</div></body></html>`);
+  await page.screenshot({ path: `${publicDir}${file}` });
+}
 await browser.close();
 console.log('Görseller public/ altına yazıldı.');

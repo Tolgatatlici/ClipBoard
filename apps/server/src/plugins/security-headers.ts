@@ -34,7 +34,8 @@ export async function securityHeaders(app: FastifyInstance, config: Config) {
           ...(storageOrigin ? [storageOrigin] : []),
         ],
         manifestSrc: ["'self'"],
-        workerSrc: ["'none'"],
+        // Service worker (çevrimdışı açılış, paylaşım menüsü) yalnızca kendi kaynağından.
+        workerSrc: ["'self'"],
         objectSrc: ["'none'"],
         baseUri: ["'none'"],
         formAction: ["'self'"],

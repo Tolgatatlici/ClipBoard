@@ -312,7 +312,7 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 
 ### Faz 4 — v2 (opsiyonel, ≈ 10+ g)
 
-- [ ] T4.1 PWA (manifest, service worker, Web Share Target)
+- [x] T4.1 PWA (manifest, service worker, Web Share Target)
 - [ ] T4.2 i18n (TR/EN)
 - [ ] T4.3 CLI aracı (`npx clipboard-cli put/get`)
 - [ ] T4.4 Tarayıcı eklentisi

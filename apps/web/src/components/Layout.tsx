@@ -1,6 +1,8 @@
 import { Link, Outlet } from 'react-router';
+import { useInstallPrompt } from '../lib/use-install-prompt';
 
 export function Layout() {
+  const install = useInstallPrompt();
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
@@ -21,7 +23,13 @@ export function Layout() {
             </svg>
             ClipBoard
           </Link>
-          <span className="muted hidden sm:inline">Cihazlar arası şifreli pano</span>
+          {install ? (
+            <button type="button" className="btn-secondary py-1.5" onClick={() => void install()}>
+              Uygulamayı yükle
+            </button>
+          ) : (
+            <span className="muted hidden sm:inline">Cihazlar arası şifreli pano</span>
+          )}
         </div>
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">

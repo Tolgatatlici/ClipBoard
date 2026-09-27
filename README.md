@@ -89,5 +89,5 @@ Diğer test seçenekleri:
 
 - `S3_TEST_ENDPOINT=http://localhost:8333 pnpm --filter @clipboard/server test`: S3 sürücüsünü docker compose'daki SeaweedFS'e karşı test eder.
 - `E2E_STORAGE_DRIVER=s3`: E2E testlerinde dosyalar SeaweedFS'e yüklenir.
-- `E2E_BASE_URL=https://localhost E2E_IGNORE_HTTPS_ERRORS=1`: E2E testlerini çalışan bir kuruluma (ör. `deploy/` ile `DOMAIN=localhost`) karşı koşar.
+- `E2E_BASE_URL=https://localhost E2E_IGNORE_HTTPS_ERRORS=1`: E2E testlerini çalışan bir kuruluma (ör. `deploy/` ile `DOMAIN=localhost`) karşı koşar. Service worker yalnızca üretim derlemesinde çalıştığından PWA testleri (`e2e/pwa.spec.ts`) sadece bu modda koşar.
 - Her E2E testi, sayfada CSP ihlali ya da yakalanmamış hata olursa başarısız olur; erişilebilirlik (axe, WCAG 2.1 AA) testleri `e2e/a11y.spec.ts` içindedir.

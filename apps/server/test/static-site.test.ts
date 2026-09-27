@@ -76,6 +76,7 @@ describe('static site', () => {
     expect(policy['object-src']).toEqual(["'none'"]);
     expect(policy['frame-ancestors']).toEqual(["'none'"]);
     expect(policy['base-uri']).toEqual(["'none'"]);
+    expect(policy['worker-src']).toEqual(["'self'"]);
     expect(policy['connect-src']).toContain('wss://clip.example.com');
     expect(policy['img-src']).toEqual(["'self'", 'data:', 'blob:']);
     expect(res.headers['referrer-policy']).toBe('no-referrer');

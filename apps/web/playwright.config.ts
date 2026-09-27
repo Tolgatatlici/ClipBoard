@@ -27,6 +27,8 @@ export default defineConfig({
       executablePath,
       // POSIX yerel ayarında Chromium ASCII dışı indirme adlarını "download" yapar.
       env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' },
+      // Service worker kaydı `ignoreHTTPSErrors`'u dikkate almaz; yerel sertifika için gerekir.
+      args: process.env.E2E_IGNORE_HTTPS_ERRORS ? ['--ignore-certificate-errors'] : [],
     },
   },
   projects: [
