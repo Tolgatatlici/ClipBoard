@@ -16,9 +16,11 @@ import { initSentry, observability, reportError } from './plugins/observability.
 import { securityHeaders } from './plugins/security-headers.js';
 import { isPageRequest, staticSite } from './plugins/static-site.js';
 import { fileRoutes } from './routes/files.js';
+import { pairingRoutes } from './routes/pairing.js';
 import { reportRoutes } from './routes/reports.js';
 import { roomRoutes } from './routes/rooms.js';
 import { RoomHub, type RoomHubOptions } from './rooms/hub.js';
+import { PairingHub } from './rooms/pairing-hub.js';
 import { ClipStore } from './services/clip-store.js';
 import { FileService } from './services/file-service.js';
 import { ReportStore } from './services/report-store.js';
@@ -145,6 +147,13 @@ export async function buildApp(
   const hub = new RoomHub(redis, redis.duplicate(), app.log, { ...rooms, metrics });
   await app.register(roomRoutes, { hub });
   app.addHook('preClose', async () => hub.close());
+
+  const pairing = new PairingHub(redis, redis.duplicate(), app.log);
+  await app.register(pairingRoutes, {
+    hub: pairing,
+    rateLimit: Math.min(config.RATE_LIMIT_PAIRING_MAX, config.RATE_LIMIT_MAX),
+  });
+  app.addHook('preClose', async () => pairing.close());
 
   const sweeper = setInterval(() => {
     files

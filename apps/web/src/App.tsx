@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { ClipPage } from './pages/ClipPage';
 import { HomePage } from './pages/HomePage';
 import { HowItWorksPage } from './pages/HowItWorksPage';
+import { JoinRoomPage } from './pages/JoinRoomPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { ReportPage } from './pages/ReportPage';
@@ -16,6 +17,7 @@ export function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="c/:id" element={<ClipPage />} />
         <Route path="r" element={<RoomPage />} />
+        <Route path="r/katil/:code" element={<JoinRoomPage />} />
         <Route path="nasil-calisir" element={<HowItWorksPage />} />
         <Route path="gizlilik" element={<PrivacyPage />} />
         <Route path="kullanim-kosullari" element={<TermsPage />} />

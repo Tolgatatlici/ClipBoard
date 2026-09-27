@@ -1,35 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { DecryptionError } from './crypto.js';
 import {
-  deriveRoom,
-  formatRoomCode,
-  generateRoomCode,
+  generateRoomSecret,
+  isRoomSecret,
   openRoomItem,
-  parseRoomCode,
+  roomFromSecret,
   roomIdSchema,
   sealRoomItem,
   type RoomContent,
 } from './room.js';
 
-describe('room codes', () => {
-  it('generates, formats and parses codes', () => {
-    const code = generateRoomCode();
-    expect(code).toHaveLength(10);
-    expect(parseRoomCode(formatRoomCode(code).toLowerCase())).toBe(code);
-    expect(parseRoomCode('ABCD-EFGH')).toBeNull();
-    expect(parseRoomCode('ABCDE-FGHJU')).toBeNull();
+describe('room secrets', () => {
+  it('are random 256-bit values', () => {
+    const a = generateRoomSecret();
+    expect(isRoomSecret(a)).toBe(true);
+    expect(a).toHaveLength(43);
+    expect(generateRoomSecret()).not.toBe(a);
+    expect(isRoomSecret('ABCDE-FGHJK')).toBe(false);
   });
-});
 
-describe('deriveRoom', () => {
-  it('is deterministic per code and yields a valid room id', async () => {
-    const a = await deriveRoom('ABCDEFGHJK');
-    const b = await deriveRoom('ABCDEFGHJK');
-    const c = await deriveRoom('ABCDEFGHJM');
+  it('derive a stable room id and key', async () => {
+    const secret = generateRoomSecret();
+    const a = await roomFromSecret(secret);
+    const b = await roomFromSecret(secret);
+    const c = await roomFromSecret(generateRoomSecret());
     expect(a.roomId).toBe(b.roomId);
     expect(a.key).toEqual(b.key);
     expect(c.roomId).not.toBe(a.roomId);
     expect(roomIdSchema.safeParse(a.roomId).success).toBe(true);
+    // Oda kimliği sırrın bir parçası değildir.
+    expect(secret).not.toContain(a.roomId);
   });
 });
 
@@ -45,15 +45,15 @@ describe('room items', () => {
       size: 42,
     },
   ])('round-trips %o', async (content) => {
-    const room = await deriveRoom('ABCDEFGHJK');
+    const room = await roomFromSecret(generateRoomSecret());
     const sealed = await sealRoomItem(room, content);
     expect(sealed.ct).not.toContain('merhaba');
     expect(await openRoomItem(room, sealed)).toEqual(content);
   });
 
   it('cannot be read with another room key', async () => {
-    const room = await deriveRoom('ABCDEFGHJK');
-    const other = await deriveRoom('ABCDEFGHJM');
+    const room = await roomFromSecret(generateRoomSecret());
+    const other = await roomFromSecret(generateRoomSecret());
     const sealed = await sealRoomItem(room, { kind: 'text', format: 'plain', text: 'x' });
     await expect(openRoomItem(other, sealed)).rejects.toThrow(DecryptionError);
   });

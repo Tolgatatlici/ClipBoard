@@ -1,4 +1,4 @@
-import { deriveRoom, LIMITS } from '@clipboard/shared';
+import { generateRoomSecret, LIMITS, roomFromSecret } from '@clipboard/shared';
 import { decryptItem, mergeEntries, RoomTextTooLargeError, textItem } from './rooms';
 
 const entry = (id: string, ts: number) => ({ id, ts, content: null });
@@ -17,8 +17,8 @@ describe('mergeEntries', () => {
 
 describe('room items', () => {
   it('encrypts text and marks undecryptable items', async () => {
-    const room = await deriveRoom('ABCDEFGHJK');
-    const other = await deriveRoom('ABCDEFGHJM');
+    const room = await roomFromSecret(generateRoomSecret());
+    const other = await roomFromSecret(generateRoomSecret());
     const sealed = await textItem(room, 'selam', 'plain');
     const item = { ...sealed, id: '1', ts: 1 };
     expect((await decryptItem(room, item)).content).toEqual({
@@ -30,7 +30,7 @@ describe('room items', () => {
   });
 
   it('rejects texts over the room limit', async () => {
-    const room = await deriveRoom('ABCDEFGHJK');
+    const room = await roomFromSecret(generateRoomSecret());
     expect(() => textItem(room, 'x'.repeat(LIMITS.maxRoomTextBytes + 1), 'plain')).toThrow(
       RoomTextTooLargeError,
     );

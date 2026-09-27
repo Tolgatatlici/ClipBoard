@@ -130,12 +130,11 @@ Kullanıcı bir cihazda (ör. iş bilgisayarı) metin/dosya yapıştırır; baş
    - Kalan risk: Redis dökümüne erişen biri 20 bitlik `secret`'ı çevrimdışı deneyebilir. Hassas veri için "Kısa kod oluştur" kapatılabilir; o zaman `id` 12 karakterdir ve yalnızca link çalışır.
 6. Parola seçeneği (Faz 2): `K`, `PBKDF2(parola, salt, 600k)` ile sarmalanır.
 
-**Room modu (Faz 2'de uygulandı):**
+**Room modu (Faz 2, Faz 4'te güncellendi):**
 
-- Oda kodu 10 karakter Crockford Base32 (`ABCDE-FGHJK`, 50 bit); istemcide üretilir, link `/r#ABCDE-FGHJK`.
-- `PBKDF2(kod, "clipboard/v1/room", 300k)` → 384 bit: ilk 128 bit sunucunun gördüğü `roomId`, kalan 256 bit mesaj anahtarı. PBKDF2, sunucu verisine erişen birinin kodu çevrimdışı denemesini pahalılaştırır.
+- Her oda rastgele 256 bitlik bir sırla oluşturulur: `HKDF(sır)` → sunucunun gördüğü `roomId` (128 bit) ve mesaj anahtarı. Link `/r#<sır>`; sır sunucuya gitmez. (Faz 2'deki 10 karakterlik oda kodu + PBKDF2 yaklaşımı, veritabanı sızıntısında deneme-yanılmaya açık olduğu için kaldırıldı.)
 - Her öğe `AES-GCM(roomKey, başlık + gövde, AAD=roomId)` ile şifrelenir; dosya öğeleri dosyanın kendi rastgele anahtarını şifreli başlıkta taşır.
-- Daha güçlü alternatif (v2): cihaz eşleştirmede ECDH (X25519) + QR ile açık anahtar değişimi.
+- **Kodla cihaz ekleme (T4.6, ECDH):** Odadaki cihaz `POST /api/pairings` ile tek kullanımlık, 5 dakikalık 6 haneli kod alır. İki cihaz `/ws/pair/:kod` kanalında (en fazla 2 katılımcı) P-256 açık anahtarlarını değiştirir; `HKDF(ECDH ‖ SHA-256(kod ‖ açık anahtarlar))` → aktarım anahtarı + 6 haneli doğrulama numarası (SAS). Numaralar iki ekranda aynıysa kullanıcı onaylar, oda sırrı bu anahtarla şifrelenip gönderilir ve kod silinir. Sunucu araya girerse numaralar farklı çıkar.
 
 ### 3.4 Veri Modeli (Redis)
 
@@ -316,8 +315,8 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 - [x] T4.2 i18n (TR/EN)
 - [x] T4.3 CLI aracı (`clip put/get`)
 - [x] T4.4 Tarayıcı eklentisi
-- [ ] T4.5 Opsiyonel hesap + kalıcı cihaz eşleştirme (PostgreSQL)
-- [ ] T4.6 ECDH tabanlı cihaz eşleştirme (daha güçlü E2E)
+- [ ] T4.5 Opsiyonel hesap + kalıcı cihaz eşleştirme (PostgreSQL) _(ertelendi: hesapsız kullanım ürünün temel vaadi)_
+- [x] T4.6 ECDH tabanlı cihaz eşleştirme (daha güçlü E2E)
 - [ ] T4.7 WebRTC ile P2P büyük dosya aktarımı (sunucudan geçmeden)
 
 **Toplam tahmin:** MVP ≈ 2 hafta, v1 ile yayın ≈ 5–6 hafta (tek geliştirici).

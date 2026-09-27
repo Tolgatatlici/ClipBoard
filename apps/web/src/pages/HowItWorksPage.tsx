@@ -42,9 +42,11 @@ function HowItWorksTr() {
 
       <h2>Canlı oda</h2>
       <p>
-        Bir oda açıp kodunu diğer cihazınızda girdiğinizde, birinde gönderdiğiniz her şey
-        diğerlerinde anında görünür. Oda kodu şifreleme anahtarını da belirler; sunucu kodu ve
-        içeriği göremez. Oda son 50 öğeyi tutar ve 24 saat hareketsiz kalınca silinir.
+        Bir odaya eklediğiniz cihazlarda, birinde gönderdiğiniz her şey diğerlerinde anında görünür.
+        Oda rastgele bir anahtarla oluşturulur; yeni cihazı QR kodla ya da 6 haneli bir eşleştirme
+        koduyla eklersiniz. Kodla eklerken iki ekranda aynı doğrulama numarası görünür; numaralar
+        aynıysa anahtar yeni cihaza şifreli olarak aktarılır. Sunucu anahtarı ve içeriği göremez.
+        Oda son 50 öğeyi tutar ve 24 saat hareketsiz kalınca silinir.
       </p>
 
       <h2>Sunucunun gördükleri</h2>
@@ -100,10 +102,11 @@ function HowItWorksEn() {
 
       <h2>Live room</h2>
       <p>
-        Open a room and enter its code on your other device: everything you send on one appears
-        instantly on the others. The room code also determines the encryption key; the server sees
-        neither the code nor the content. A room keeps the last 50 items and is deleted after 24
-        hours of inactivity.
+        On devices added to a room, everything you send on one appears instantly on the others. A
+        room is created with a random key; you add a new device with the QR code or a 6-digit
+        pairing code. When pairing with a code, both screens show the same verification number; if
+        they match, the key is sent encrypted to the new device. The server sees neither the key nor
+        the content. A room keeps the last 50 items and is deleted after 24 hours of inactivity.
       </p>
 
       <h2>What the server sees</h2>

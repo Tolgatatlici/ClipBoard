@@ -2,6 +2,7 @@ import {
   clipMetaResponseSchema,
   createClipResponseSchema,
   createFileResponseSchema,
+  createPairingResponseSchema,
   fileDownloadResponseSchema,
   errorResponseSchema,
   openClipResponseSchema,
@@ -11,6 +12,7 @@ import {
   type CreateFileRequest,
   type CreateReportRequest,
   type CreateFileResponse,
+  type CreatePairingResponse,
   type ErrorResponse,
   type OpenClipRequest,
   type OpenClipResponse,
@@ -96,6 +98,10 @@ export const api = {
       { method: 'POST', body: JSON.stringify(body) },
       createFileResponseSchema,
     );
+  },
+
+  createPairing(): Promise<CreatePairingResponse> {
+    return request('/api/pairings', { method: 'POST' }, createPairingResponseSchema);
   },
 
   createReport(body: CreateReportRequest): Promise<void> {

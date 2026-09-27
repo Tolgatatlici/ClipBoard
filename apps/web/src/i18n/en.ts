@@ -47,7 +47,7 @@ export const en: Messages = {
     room: 'Live room',
     notFound: 'Page not found',
   },
-  codeInput: { clipLabel: 'Share code', roomLabel: 'Room code', join: 'Join' },
+  codeInput: { clipLabel: 'Share code', pairingLabel: 'Pairing code', join: 'Join' },
   share: {
     heading: 'Paste the text you want to share',
     fileHeading: 'File to share',
@@ -89,7 +89,7 @@ export const en: Messages = {
     receiveBody: 'Enter the code to decrypt the content on this device.',
     roomTitle: 'Live room',
     roomBody:
-      'Pair your devices with a room code; everything you send on one appears instantly on the others.',
+      'Pair your devices in a room; everything you send on one appears instantly on the others. To join, enter the 6-digit code shown on a device in the room.',
     newRoom: 'Create a new room',
   },
   clip: {
@@ -116,20 +116,22 @@ export const en: Messages = {
     downloadTxt: 'Download (.txt)',
   },
   room: {
-    invalidTitle: 'Invalid room code',
-    invalidBody: 'Room codes have 10 characters, for example ABCDE-FGHJK.',
+    invalidTitle: 'Invalid room link',
+    invalidBody: 'The room link is incomplete or corrupted. Make sure you copied the whole link.',
     fullTitle: 'Room is full',
     fullBody: 'The number of devices in this room has reached the limit.',
     newRoom: 'Create a new room',
     title: 'Live room',
     intro:
-      'Enter this code on the other device; everything sent appears instantly. The room is deleted after 24 hours of inactivity.',
+      'Add another device with “Add device with a code” or the QR code; everything sent appears instantly. The room is deleted after 24 hours of inactivity.',
+    addDevice: 'Add device with a code',
+    qrHint:
+      'Scan with your phone. This QR code contains the room key; only share it with your own devices.',
     preparing: 'Preparing key…',
     connected: 'Connected · {n} devices',
     reconnecting: 'Reconnecting…',
     closed: 'Connection closed',
     connecting: 'Connecting…',
-    copyCode: 'Copy code',
     copyLink: 'Copy link',
     showQr: 'Show QR',
     hideQr: 'Hide QR',
@@ -148,6 +150,26 @@ export const en: Messages = {
     typing: 'The other device is typing…',
     empty: 'Nothing has been shared yet.',
     undecryptable: 'This item could not be decrypted.',
+  },
+  pairing: {
+    hostTitle: 'Add device with a code',
+    hostIntro:
+      'On the other device, enter this code in the “Live room” section of the home page. It is valid for 5 minutes and can be used once.',
+    waiting: 'Waiting for the other device…',
+    verifyHost: 'Does the other device show the same verification number? If so, add the device.',
+    verifyGuest:
+      'Does the other device show the same verification number? If so, confirm on the other device.',
+    mismatchNote: 'If the numbers differ, the connection is not secure; cancel.',
+    confirm: 'Same, add it',
+    reject: 'Different, cancel',
+    sent: 'The device was added to the room.',
+    again: 'Add another device',
+    close: 'Close',
+    cancelled: 'Pairing was cancelled.',
+    failed: 'Pairing could not be completed. Please try again.',
+    guestTitle: 'Joining the room',
+    connecting: 'Connecting to the other device…',
+    notFound: 'Code not found, expired or already used. Get a new code on a device in the room.',
   },
   notFound: { title: 'Page not found', back: 'Back to home' },
   report: {

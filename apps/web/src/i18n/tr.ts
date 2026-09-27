@@ -46,7 +46,7 @@ export const tr = {
     room: 'Canlı oda',
     notFound: 'Sayfa bulunamadı',
   },
-  codeInput: { clipLabel: 'Paylaşım kodu', roomLabel: 'Oda kodu', join: 'Katıl' },
+  codeInput: { clipLabel: 'Paylaşım kodu', pairingLabel: 'Eşleştirme kodu', join: 'Katıl' },
   share: {
     heading: 'Paylaşmak istediğiniz metni yapıştırın',
     fileHeading: 'Paylaşılacak dosya',
@@ -88,7 +88,7 @@ export const tr = {
     receiveBody: 'Kodu girin, içerik bu cihazda çözülsün.',
     roomTitle: 'Canlı oda',
     roomBody:
-      'Cihazlarınızı bir oda koduyla eşleştirin; birinde gönderdiğiniz her şey diğerlerinde anında görünsün.',
+      'Cihazlarınızı bir odada eşleştirin; birinde gönderdiğiniz her şey diğerlerinde anında görünsün. Katılmak için odadaki cihazda gösterilen 6 haneli kodu girin.',
     newRoom: 'Yeni oda oluştur',
   },
   clip: {
@@ -115,20 +115,22 @@ export const tr = {
     downloadTxt: 'İndir (.txt)',
   },
   room: {
-    invalidTitle: 'Geçersiz oda kodu',
-    invalidBody: 'Oda kodu 10 karakterden oluşur, örneğin ABCDE-FGHJK.',
+    invalidTitle: 'Geçersiz oda linki',
+    invalidBody: 'Oda linki eksik ya da bozuk. Linkin tamamını kopyaladığınızdan emin olun.',
     fullTitle: 'Oda dolu',
     fullBody: 'Bu odaya bağlı cihaz sayısı sınıra ulaştı.',
     newRoom: 'Yeni oda oluştur',
     title: 'Canlı oda',
     intro:
-      'Bu kodu diğer cihazda girin; gönderilen her şey anında görünür. Oda 24 saat hareketsiz kalınca silinir.',
+      'Diğer cihazı “Kodla cihaz ekle” ya da QR kod ile ekleyin; gönderilen her şey anında görünür. Oda 24 saat hareketsiz kalınca silinir.',
+    addDevice: 'Kodla cihaz ekle',
+    qrHint:
+      'Telefonla okutun. Bu QR kod odanın anahtarını içerir; yalnızca kendi cihazlarınızla paylaşın.',
     preparing: 'Anahtar hazırlanıyor…',
     connected: 'Bağlı · {n} cihaz',
     reconnecting: 'Yeniden bağlanıyor…',
     closed: 'Bağlantı kapandı',
     connecting: 'Bağlanıyor…',
-    copyCode: 'Kodu kopyala',
     copyLink: 'Linki kopyala',
     showQr: 'QR göster',
     hideQr: 'QR gizle',
@@ -147,6 +149,26 @@ export const tr = {
     typing: 'Diğer cihaz yazıyor…',
     empty: 'Henüz bir şey paylaşılmadı.',
     undecryptable: 'Bu öğe çözülemedi.',
+  },
+  pairing: {
+    hostTitle: 'Kodla cihaz ekle',
+    hostIntro:
+      'Diğer cihazda ana sayfadaki “Canlı oda” bölümüne bu kodu girin. Kod 5 dakika geçerlidir ve bir kez kullanılır.',
+    waiting: 'Diğer cihaz bekleniyor…',
+    verifyHost: 'Diğer cihazda da aynı doğrulama numarası görünüyor mu? Aynıysa cihazı ekleyin.',
+    verifyGuest:
+      'Diğer cihazda da aynı doğrulama numarası görünüyor mu? Aynıysa diğer cihazda onaylayın.',
+    mismatchNote: 'Numaralar farklıysa bağlantı güvenli değildir; iptal edin.',
+    confirm: 'Aynı, ekle',
+    reject: 'Farklı, iptal et',
+    sent: 'Cihaz odaya eklendi.',
+    again: 'Başka cihaz ekle',
+    close: 'Kapat',
+    cancelled: 'Eşleştirme iptal edildi.',
+    failed: 'Eşleştirme tamamlanamadı. Yeniden deneyin.',
+    guestTitle: 'Odaya katılınıyor',
+    connecting: 'Diğer cihaza bağlanılıyor…',
+    notFound: 'Kod bulunamadı, süresi dolmuş ya da kullanılmış. Odadaki cihazda yeni bir kod alın.',
   },
   notFound: { title: 'Sayfa bulunamadı', back: 'Ana sayfaya dön' },
   report: {

@@ -14,6 +14,8 @@ const envSchema = z.object({
   RATE_LIMIT_CREATE_MAX: z.coerce.number().int().positive().default(30),
   RATE_LIMIT_OPEN_MAX: z.coerce.number().int().positive().default(20),
   RATE_LIMIT_FILE_MAX: z.coerce.number().int().positive().default(20),
+  /** IP başına dakikada en fazla eşleştirme kodu. */
+  RATE_LIMIT_PAIRING_MAX: z.coerce.number().int().positive().default(10),
   REDIS_URL: z.url().default('redis://localhost:6379'),
   /** Verilirse `/metrics` bu anahtarla (Authorization: Bearer) açılır. */
   METRICS_TOKEN: z.string().min(16).optional(),

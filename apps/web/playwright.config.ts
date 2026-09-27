@@ -54,6 +54,7 @@ export default defineConfig({
             RATE_LIMIT_CREATE_MAX: '10000',
             RATE_LIMIT_OPEN_MAX: '10000',
             RATE_LIMIT_FILE_MAX: '10000',
+            RATE_LIMIT_PAIRING_MAX: '10000',
             // E2E_STORAGE_DRIVER=s3: dosyalar docker compose'daki SeaweedFS'e yüklenir.
             STORAGE_DRIVER: process.env.E2E_STORAGE_DRIVER ?? 'local',
             STORAGE_DIR: join(tmpdir(), 'clipboard-e2e-files'),

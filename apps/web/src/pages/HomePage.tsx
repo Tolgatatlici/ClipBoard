@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { formatRoomCode } from '@clipboard/shared';
-import { CodeInput, RoomCodeInput } from '../components/CodeInput';
+import { CodeInput, PairingCodeInput } from '../components/CodeInput';
 import { ShareForm } from '../components/ShareForm';
 import { ShareResult } from '../components/ShareResult';
 import type { CreatedClip } from '../lib/clips';
@@ -71,7 +70,7 @@ export function HomePage() {
             {t('home.newRoom')}
           </Link>
           <div className="flex-1">
-            <RoomCodeInput onSubmit={(code) => navigate(`/r#${formatRoomCode(code)}`)} />
+            <PairingCodeInput onSubmit={(code) => navigate(`/r/katil/${code}`)} />
           </div>
         </div>
       </section>

@@ -1,11 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import WebSocket from 'ws';
+import type WebSocket from 'ws';
 import type { FastifyInstance } from 'fastify';
 import { Redis } from 'ioredis';
 import { serverMessageSchema, type ServerMessage } from '@clipboard/shared';
 import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import { TEST_REDIS_URL, useTestApp } from './helpers.js';
+import { closeAll, openSocket, type TestSocket } from './ws-client.js';
 
 const ctx = useTestApp(
   {},
@@ -18,27 +19,12 @@ const ROOM = 'A'.repeat(22);
 const OTHER_ROOM = 'B'.repeat(22);
 const clients: WebSocket[] = [];
 
-afterEach(async () => {
-  await Promise.all(
-    clients.splice(0).map(
-      (socket) =>
-        new Promise<void>((resolve) => {
-          if (socket.readyState === WebSocket.CLOSED) return resolve();
-          socket.once('close', () => resolve());
-          socket.close();
-        }),
-    ),
-  );
-});
+afterEach(() => closeAll(clients));
 
-interface TestClient {
-  socket: WebSocket;
-  next(type?: ServerMessage['type']): Promise<ServerMessage>;
+type TestClient = TestSocket<ServerMessage> & {
   /** Belirtilen sayıda cihaz bildiren çevrimiçi mesajını bekler. */
   peers(count: number): Promise<void>;
-  send(message: unknown): void;
-  closed: Promise<number>;
-}
+};
 
 async function listenUrl(app: FastifyInstance) {
   const address = await app.listen({ port: 0, host: '127.0.0.1' });
@@ -46,44 +32,19 @@ async function listenUrl(app: FastifyInstance) {
 }
 
 function connect(url: string, roomId = ROOM): TestClient {
-  const socket = new WebSocket(`${url}/ws/rooms/${roomId}`);
-  clients.push(socket);
-  const queue: ServerMessage[] = [];
-  const waiters: Array<() => void> = [];
-  socket.on('message', (data) => {
-    queue.push(serverMessageSchema.parse(JSON.parse(data.toString())));
-    waiters.splice(0).forEach((wake) => wake());
-  });
-  const closed = new Promise<number>((resolve) => socket.on('close', (code) => resolve(code)));
-
-  const client: TestClient = {
-    socket,
-    closed,
-    async peers(count) {
+  const client = openSocket<ServerMessage>(
+    `${url}/ws/rooms/${roomId}`,
+    serverMessageSchema,
+    clients,
+  );
+  return Object.assign(client, {
+    async peers(count: number) {
       for (;;) {
         const message = await client.next('presence');
         if (message.type === 'presence' && message.peers === count) return;
       }
     },
-    send: (message) => {
-      const payload = JSON.stringify(message);
-      if (socket.readyState === WebSocket.OPEN) socket.send(payload);
-      else socket.once('open', () => socket.send(payload));
-    },
-    async next(type) {
-      const deadline = Date.now() + 2000;
-      for (;;) {
-        const index = queue.findIndex((message) => !type || message.type === type);
-        if (index !== -1) return queue.splice(index, 1)[0]!;
-        if (Date.now() > deadline) throw new Error(`Timed out waiting for ${type ?? 'message'}`);
-        await new Promise<void>((resolve) => {
-          waiters.push(resolve);
-          setTimeout(resolve, 50);
-        });
-      }
-    },
-  };
-  return client;
+  });
 }
 
 const item = (n: number) => ({ type: 'item', item: { ct: `ciphertext${n}`, iv: 'I'.repeat(16) } });

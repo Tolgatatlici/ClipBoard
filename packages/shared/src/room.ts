@@ -1,39 +1,39 @@
 /**
- * Canlı oda: iki veya daha fazla cihaz aynı oda koduyla gerçek zamanlı içerik paylaşır.
+ * Canlı oda: iki veya daha fazla cihaz aynı odada gerçek zamanlı içerik paylaşır.
  *
- * Oda kodu (10 karakter, 50 bit) yalnızca istemcilerde kalır. `PBKDF2(kod)` ile
- * sunucunun gördüğü oda kimliği ve mesajları şifreleyen anahtar türetilir; sunucu
- * kodu, anahtarı ve içeriği göremez. PBKDF2, sunucu verisine erişen birinin kodu
- * çevrimdışı denemesini pahalı hale getirir.
+ * Her oda rastgele 256 bitlik bir sırdan türetilir: `HKDF(sır)` → sunucunun gördüğü
+ * oda kimliği ve mesajları şifreleyen anahtar. Sır link/QR'ın `#` kısmında taşınır ya da
+ * yeni cihaza ECDH eşleştirmesiyle (bkz. pairing.ts) şifreli olarak aktarılır; sunucu
+ * sırrı, anahtarı ve içeriği göremez, veritabanı ele geçirilse bile denenecek kısa bir
+ * kod yoktur.
  */
 import { z } from 'zod';
-import { CODE_ALPHABET, normalizeCode, randomCodeString } from './code.js';
 import { textFormatSchema, type TextFormat } from './content.js';
 import { LIMITS } from './constants.js';
-import { aesDecrypt, aesEncrypt, DecryptionError, type Bytes } from './crypto.js';
+import {
+  aesDecrypt,
+  aesEncrypt,
+  DecryptionError,
+  hkdf,
+  importKey,
+  randomBytes,
+  type Bytes,
+} from './crypto.js';
 import { BASE64URL_PATTERN, base64UrlLength, toBase64Url } from './encoding.js';
 import { FILE_ID_BYTES, GCM_TAG_BYTES, IV_BYTES, KEY_BYTES } from './schemas.js';
 
-export const ROOM_CODE_LENGTH = 10;
 export const ROOM_ID_BYTES = 16;
-const ROOM_PBKDF2_ITERATIONS = 300_000;
-const ROOM_SALT = 'clipboard/v1/room';
+const INFO_ROOM_ID = 'clipboard/v1/room-id';
+const INFO_ROOM_KEY = 'clipboard/v1/room-key';
 
-export function generateRoomCode(): string {
-  return randomCodeString(ROOM_CODE_LENGTH);
+/** Yeni bir oda sırrı (base64url, 43 karakter). */
+export function generateRoomSecret(): string {
+  return toBase64Url(randomBytes(KEY_BYTES));
 }
 
-/** Girdiyi normalize eder; geçerli bir oda kodu değilse `null`. */
-export function parseRoomCode(input: string): string | null {
-  const code = normalizeCode(input);
-  if (code.length !== ROOM_CODE_LENGTH) return null;
-  for (const char of code) if (!CODE_ALPHABET.includes(char)) return null;
-  return code;
-}
-
-/** `ABCDEFGHJK` → `ABCDE-FGHJK` */
-export function formatRoomCode(code: string): string {
-  return `${code.slice(0, 5)}-${code.slice(5)}`;
+/** Link `#` kısmındaki değer geçerli bir oda sırrı mı? */
+export function isRoomSecret(value: string): boolean {
+  return BASE64URL_PATTERN.test(value) && value.length === base64UrlLength(KEY_BYTES);
 }
 
 export interface RoomSecrets {
@@ -41,27 +41,12 @@ export interface RoomSecrets {
   key: Bytes;
 }
 
-export async function deriveRoom(code: string): Promise<RoomSecrets> {
-  const subtle = globalThis.crypto.subtle;
-  const encoder = new TextEncoder();
-  const baseKey = await subtle.importKey('raw', encoder.encode(code), 'PBKDF2', false, [
-    'deriveBits',
-  ]);
-  const bits = new Uint8Array(
-    await subtle.deriveBits(
-      {
-        name: 'PBKDF2',
-        hash: 'SHA-256',
-        salt: encoder.encode(ROOM_SALT),
-        iterations: ROOM_PBKDF2_ITERATIONS,
-      },
-      baseKey,
-      (ROOM_ID_BYTES + KEY_BYTES) * 8,
-    ),
-  );
+export async function roomFromSecret(secret: string): Promise<RoomSecrets> {
+  const material = importKey(secret);
+  const id = await hkdf(material, INFO_ROOM_ID);
   return {
-    roomId: toBase64Url(bits.slice(0, ROOM_ID_BYTES)),
-    key: bits.slice(ROOM_ID_BYTES),
+    roomId: toBase64Url(id.slice(0, ROOM_ID_BYTES)),
+    key: await hkdf(material, INFO_ROOM_KEY),
   };
 }
 

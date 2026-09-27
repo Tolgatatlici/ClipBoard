@@ -9,10 +9,9 @@ import {
 } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import {
-  deriveRoom,
-  formatRoomCode,
-  generateRoomCode,
-  parseRoomCode,
+  generateRoomSecret,
+  isRoomSecret,
+  roomFromSecret,
   type EncryptedRoomItem,
   type RoomContent,
   type RoomSecrets,
@@ -23,6 +22,7 @@ import { CodeBlock, PlainText } from '../components/CodeBlock';
 import { CopyButton } from '../components/CopyButton';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { FileView } from '../components/FileView';
+import { PairingPanel } from '../components/PairingPanel';
 import { QrCode } from '../components/QrCode';
 import { RoomConnection, roomSocketUrl, type ConnectionStatus } from '../lib/room-connection';
 import {
@@ -46,16 +46,15 @@ export function RoomPage() {
   const t = useT();
   const { hash } = useLocation();
   const navigate = useNavigate();
-  const raw = decodeURIComponent(hash.replace(/^#/, ''));
-  const code = parseRoomCode(raw);
+  const secret = hash.replace(/^#/, '');
 
-  // Kodsuz açılırsa yeni bir oda oluştur.
+  // Sırsız açılırsa yeni bir oda oluştur.
   useEffect(() => {
-    if (!raw) navigate(`/r#${formatRoomCode(generateRoomCode())}`, { replace: true });
-  }, [raw, navigate]);
+    if (!secret) navigate(`/r#${generateRoomSecret()}`, { replace: true });
+  }, [secret, navigate]);
 
-  if (!raw) return null;
-  if (!code) {
+  if (!secret) return null;
+  if (!isRoomSecret(secret)) {
     return (
       <section className="card flex flex-col items-start gap-4">
         <h1 className="text-xl font-semibold">{t('room.invalidTitle')}</h1>
@@ -66,10 +65,10 @@ export function RoomPage() {
       </section>
     );
   }
-  return <Room key={code} code={code} />;
+  return <Room key={secret} secret={secret} />;
 }
 
-function Room({ code }: { code: string }) {
+function Room({ secret }: { secret: string }) {
   const t = useT();
   const [room, setRoom] = useState<RoomSecrets | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
@@ -84,11 +83,11 @@ function Room({ code }: { code: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    void deriveRoom(code).then((derived) => !cancelled && setRoom(derived));
+    void roomFromSecret(secret).then((derived) => !cancelled && setRoom(derived));
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [secret]);
 
   useEffect(() => {
     if (!room) return;
@@ -135,7 +134,7 @@ function Room({ code }: { code: string }) {
     };
   }, [room]);
 
-  const link = `${window.location.origin}/r#${formatRoomCode(code)}`;
+  const link = `${window.location.origin}/r#${secret}`;
 
   if (roomFull) {
     return (
@@ -151,7 +150,7 @@ function Room({ code }: { code: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <RoomHeader code={code} link={link} status={status} peers={peers} ready={room !== null} />
+      <RoomHeader secret={secret} link={link} status={status} peers={peers} ready={room !== null} />
       <Composer
         disabled={!room}
         onSend={async (build) => {
@@ -170,16 +169,15 @@ function Room({ code }: { code: string }) {
 }
 
 function RoomHeader(props: {
-  code: string;
+  secret: string;
   link: string;
   status: ConnectionStatus;
   peers: number;
   ready: boolean;
 }) {
-  const { code, link, status, peers, ready } = props;
+  const { secret, link, status, peers, ready } = props;
   const t = useT();
-  const [showQr, setShowQr] = useState(false);
-  const formatted = formatRoomCode(code);
+  const [panel, setPanel] = useState<'qr' | 'pair' | null>(null);
   const statusText = !ready
     ? t('room.preparing')
     : status === 'open'
@@ -211,27 +209,34 @@ function RoomHeader(props: {
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <output
-          data-testid="room-code"
-          className="rounded-lg bg-slate-100 px-4 py-2 font-mono text-2xl font-semibold tracking-[0.2em] dark:bg-slate-800"
+        <button
+          type="button"
+          className="btn-primary"
+          aria-expanded={panel === 'pair'}
+          onClick={() => setPanel(panel === 'pair' ? null : 'pair')}
         >
-          {formatted}
-        </output>
-        <CopyButton text={formatted} label={t('room.copyCode')} />
-        <CopyButton text={link} label={t('room.copyLink')} />
-        <button type="button" className="btn-secondary" onClick={() => setShowQr(!showQr)}>
-          {showQr ? t('room.hideQr') : t('room.showQr')}
+          {t('room.addDevice')}
         </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          aria-expanded={panel === 'qr'}
+          onClick={() => setPanel(panel === 'qr' ? null : 'qr')}
+        >
+          {panel === 'qr' ? t('room.hideQr') : t('room.showQr')}
+        </button>
+        <CopyButton text={link} label={t('room.copyLink')} />
         <Link to="/" className="btn-secondary">
           {t('room.leave')}
         </Link>
       </div>
-      {showQr && (
+      {panel === 'qr' && (
         <div className="flex flex-col items-start gap-1">
           <QrCode value={link} />
-          <span className="muted text-xs">{t('common.scanWithPhone')}</span>
+          <span className="muted text-xs">{t('room.qrHint')}</span>
         </div>
       )}
+      {panel === 'pair' && <PairingPanel roomSecret={secret} onClose={() => setPanel(null)} />}
     </section>
   );
 }
