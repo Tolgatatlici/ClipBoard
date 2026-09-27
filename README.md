@@ -20,7 +20,7 @@ apps/extension/   Tarayıcı eklentisi (Chrome/Edge, Manifest V3)
 
 - Node.js 22+ (`.nvmrc`)
 - pnpm 10 (`corepack enable` ile otomatik gelir)
-- Docker (Redis ve MinIO için)
+- Docker (Redis ve SeaweedFS için)
 
 ## Kurulum
 
