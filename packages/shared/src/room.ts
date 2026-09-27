@@ -125,6 +125,31 @@ export async function openRoomItem(
   }
 }
 
+// --- Şifreli sinyal mesajları (WebRTC) ---------------------------------------
+
+/**
+ * Doğrudan (P2P) dosya aktarımı için cihazlar arası sinyal mesajları. Oda anahtarıyla
+ * şifrelenir: sunucu IP adaylarını ve DTLS parmak izlerini göremez, dolayısıyla araya
+ * giremez. Öğelerle karışmasın diye farklı bir AAD kullanılır; geçmişe kaydedilmez.
+ */
+export async function sealRoomSignal(
+  room: RoomSecrets,
+  signal: unknown,
+): Promise<EncryptedRoomItem> {
+  const plaintext = new TextEncoder().encode(JSON.stringify(signal));
+  const { ciphertext, iv } = await aesEncrypt(room.key, plaintext, `${room.roomId}:signal`);
+  return { ct: ciphertext, iv };
+}
+
+export async function openRoomSignal(room: RoomSecrets, item: EncryptedRoomItem): Promise<unknown> {
+  const plaintext = await aesDecrypt(room.key, item.ct, item.iv, `${room.roomId}:signal`);
+  try {
+    return JSON.parse(new TextDecoder().decode(plaintext)) as unknown;
+  } catch {
+    throw new DecryptionError();
+  }
+}
+
 // --- WebSocket protokolü -----------------------------------------------------
 
 export const roomIdSchema = z
@@ -150,6 +175,8 @@ export type RoomItem = z.infer<typeof roomItemSchema>;
 
 export const clientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('item'), item: encryptedRoomItemSchema }),
+  /** Diğer cihazlara iletilen, saklanmayan şifreli sinyal. */
+  z.object({ type: z.literal('signal'), signal: encryptedRoomItemSchema }),
   z.object({ type: z.literal('typing') }),
   z.object({ type: z.literal('clear') }),
 ]);
@@ -166,6 +193,7 @@ export const serverMessageSchema = z.discriminatedUnion('type', [
     history: z.array(roomItemSchema),
   }),
   z.object({ type: z.literal('item'), item: roomItemSchema }),
+  z.object({ type: z.literal('signal'), signal: encryptedRoomItemSchema }),
   z.object({ type: z.literal('presence'), peers: z.number().int() }),
   z.object({ type: z.literal('typing') }),
   z.object({ type: z.literal('cleared') }),

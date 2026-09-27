@@ -100,6 +100,8 @@ Eklenti yalnızca derlemede verilen sunucuya erişim izni ister; ayarlarda başk
 7. Tek okumalık içerik, açıldığı istekte atomik olarak silinir.
 8. **Canlı oda:** Her oda rastgele 256 bitlik bir sırdan türetilir (HKDF → sunucunun gördüğü oda kimliği + mesaj anahtarı). Sır link/QR'ın `#` kısmında taşınır ya da **ECDH eşleştirmesiyle** aktarılır: odadaki cihaz 6 haneli bir kod gösterir, yeni cihaz kodu girer, iki cihaz sunucu üzerinden P-256 açık anahtarlarını değiştirir ve iki ekranda aynı 6 haneli doğrulama numarasını gösterir; kullanıcı onaylayınca sır şifreli gönderilir. Sunucu araya girerse numaralar farklı çıkar. Mesajlar WebSocket ile iletilir, Redis Pub/Sub sayesinde birden fazla sunucu örneği çalışabilir; oda son 50 öğeyi tutar ve 24 saat hareketsiz kalınca silinir.
 
+9. **Doğrudan aktarım (WebRTC):** Odada 2 GB'a kadar dosyalar cihazdan cihaza, sunucudan geçmeden gönderilir. Bağlantı kurma mesajları (SDP, IP adayları, DTLS parmak izleri) oda anahtarıyla şifreli olarak oda kanalından geçer; sunucu bunları göremez ve araya giremez. Farklı ağlardaki cihazlar için `RTC_ICE_SERVERS` ile STUN/TURN tanımlanmalıdır.
+
 Ayrıntılar için [docs/PLAN.md](docs/PLAN.md) § 3.3.
 
 ## Testler

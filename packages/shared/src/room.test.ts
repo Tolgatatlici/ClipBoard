@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { DecryptionError } from './crypto.js';
 import {
   generateRoomSecret,
+  openRoomSignal,
+  sealRoomSignal,
   isRoomSecret,
   openRoomItem,
   roomFromSecret,
@@ -56,5 +58,18 @@ describe('room items', () => {
     const other = await roomFromSecret(generateRoomSecret());
     const sealed = await sealRoomItem(room, { kind: 'text', format: 'plain', text: 'x' });
     await expect(openRoomItem(other, sealed)).rejects.toThrow(DecryptionError);
+  });
+});
+
+describe('room signals', () => {
+  it('round-trip and cannot be confused with items', async () => {
+    const room = await roomFromSecret(generateRoomSecret());
+    const signal = { kind: 'offer', sdp: 'v=0 192.168.1.5' };
+    const sealed = await sealRoomSignal(room, signal);
+    expect(sealed.ct).not.toContain('192.168');
+    expect(await openRoomSignal(room, sealed)).toEqual(signal);
+    await expect(openRoomItem(room, sealed)).rejects.toThrow(DecryptionError);
+    const item = await sealRoomItem(room, { kind: 'text', format: 'plain', text: 'x' });
+    await expect(openRoomSignal(room, item)).rejects.toThrow(DecryptionError);
   });
 });

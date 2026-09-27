@@ -17,7 +17,17 @@ import {
   type OpenClipRequest,
   type OpenClipResponse,
 } from '@clipboard/shared';
-import type { z } from 'zod';
+import { z } from 'zod';
+
+const rtcConfigResponseSchema = z.object({
+  iceServers: z.array(
+    z.object({
+      urls: z.union([z.string(), z.array(z.string())]),
+      username: z.string().optional(),
+      credential: z.string().optional(),
+    }),
+  ),
+});
 
 const API_BASE: string = import.meta.env.VITE_API_URL ?? '';
 
@@ -102,6 +112,15 @@ export const api = {
 
   createPairing(): Promise<CreatePairingResponse> {
     return request('/api/pairings', { method: 'POST' }, createPairingResponseSchema);
+  },
+
+  async getRtcConfig(): Promise<RTCIceServer[]> {
+    const { iceServers } = await request(
+      '/api/rtc-config',
+      { method: 'GET' },
+      rtcConfigResponseSchema,
+    );
+    return iceServers as RTCIceServer[];
   },
 
   createReport(body: CreateReportRequest): Promise<void> {

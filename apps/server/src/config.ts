@@ -1,5 +1,21 @@
 import { z } from 'zod';
 
+const iceServersSchema = z.array(
+  z.object({
+    urls: z.union([z.string(), z.array(z.string())]),
+    username: z.string().optional(),
+    credential: z.string().optional(),
+  }),
+);
+
+function safeJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   HOST: z.string().default('0.0.0.0'),
@@ -17,6 +33,22 @@ const envSchema = z.object({
   /** IP başına dakikada en fazla eşleştirme kodu. */
   RATE_LIMIT_PAIRING_MAX: z.coerce.number().int().positive().default(10),
   REDIS_URL: z.url().default('redis://localhost:6379'),
+  /**
+   * Doğrudan (P2P) dosya aktarımı için WebRTC ICE sunucuları, JSON dizisi:
+   * `[{"urls":"stun:stun.example.com:3478"},{"urls":"turn:…","username":"…","credential":"…"}]`.
+   * Boşsa yalnızca aynı ağdaki cihazlar doğrudan bağlanabilir.
+   */
+  RTC_ICE_SERVERS: z
+    .string()
+    .default('[]')
+    .transform((value, ctx) => {
+      const parsed = iceServersSchema.safeParse(safeJson(value));
+      if (!parsed.success) {
+        ctx.addIssue({ code: 'custom', message: 'Must be a JSON array of ICE servers' });
+        return z.NEVER;
+      }
+      return parsed.data;
+    }),
   /** Verilirse `/metrics` bu anahtarla (Authorization: Bearer) açılır. */
   METRICS_TOKEN: z.string().min(16).optional(),
   /** Verilirse sunucu hataları Sentry'ye gönderilir (istek ayrıntıları olmadan). */

@@ -56,6 +56,21 @@ Tarayıcı dosyaları doğrudan bucket'a yüklediği için gerekir:
 Uygulama dosyaları kendisi siler; bucket'ta ayrıca 8 günlük bir yaşam döngüsü kuralı
 (lifecycle) tanımlamak, sunucu uzun süre kapalı kalırsa diye iyi bir güvencedir.
 
+## Doğrudan aktarım (WebRTC) için STUN/TURN
+
+Canlı odadaki "Doğrudan gönder" özelliği dosyayı cihazdan cihaza gönderir. Aynı ağdaki
+cihazlar için ek bir şey gerekmez. Farklı ağlardaki (ör. mobil veri + ev Wi-Fi) cihazların
+bağlanabilmesi için bir STUN ve çoğu durumda bir TURN sunucusu gerekir; örneğin
+[coturn](https://github.com/coturn/coturn):
+
+```bash
+RTC_ICE_SERVERS='[{"urls":"stun:turn.example.com:3478"},{"urls":"turn:turn.example.com:3478","username":"clipboard","credential":"<parola>"}]'
+```
+
+Bu adresler `/api/rtc-config` ile yalnızca aktarım başlatıldığında tarayıcıya verilir. Genel
+bir STUN sunucusu (ör. Google) kullanmak, kullanıcıların IP adreslerini o sağlayıcıya
+gösterir; bu yüzden varsayılan olarak hiçbiri tanımlı değildir.
+
 ## İzleme
 
 - **Uptime:** `GET /api/health` Redis'e ulaşılamazsa 503 döner; UptimeRobot vb. ile izleyin.

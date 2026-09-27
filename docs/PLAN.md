@@ -317,7 +317,7 @@ Tahminler tek geliştirici için yaklaşık **gün (g)** cinsindendir.
 - [x] T4.4 Tarayıcı eklentisi
 - [ ] T4.5 Opsiyonel hesap + kalıcı cihaz eşleştirme (PostgreSQL) _(ertelendi: hesapsız kullanım ürünün temel vaadi)_
 - [x] T4.6 ECDH tabanlı cihaz eşleştirme (daha güçlü E2E)
-- [ ] T4.7 WebRTC ile P2P büyük dosya aktarımı (sunucudan geçmeden)
+- [x] T4.7 WebRTC ile P2P büyük dosya aktarımı (sunucudan geçmeden) _(odada, 2 GB'a kadar; sinyaller oda anahtarıyla şifreli)_
 
 **Toplam tahmin:** MVP ≈ 2 hafta, v1 ile yayın ≈ 5–6 hafta (tek geliştirici).
 

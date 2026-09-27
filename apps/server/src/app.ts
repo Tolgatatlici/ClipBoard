@@ -110,6 +110,12 @@ export async function buildApp(
   });
 
   // Yük dengeleyici ve uptime izleme için: Redis'e ulaşılamıyorsa 503 döner.
+  // Doğrudan aktarım için ICE sunucuları (STUN/TURN). Sayfa bunları yalnızca P2P
+  // aktarım başlatıldığında ister.
+  app.get('/api/rtc-config', async (_request, reply) => {
+    return reply.header('Cache-Control', 'no-store').send({ iceServers: config.RTC_ICE_SERVERS });
+  });
+
   app.get('/api/health', { config: { rateLimit: false } }, async (_request, reply) => {
     try {
       await redis.ping();

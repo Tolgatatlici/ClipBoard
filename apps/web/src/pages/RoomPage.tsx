@@ -11,7 +11,9 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import {
   generateRoomSecret,
   isRoomSecret,
+  openRoomSignal,
   roomFromSecret,
+  sealRoomSignal,
   type EncryptedRoomItem,
   type RoomContent,
   type RoomSecrets,
@@ -21,9 +23,12 @@ import {
 import { CodeBlock, PlainText } from '../components/CodeBlock';
 import { CopyButton } from '../components/CopyButton';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { DirectTransfer } from '../components/DirectTransfer';
 import { FileView } from '../components/FileView';
 import { PairingPanel } from '../components/PairingPanel';
 import { QrCode } from '../components/QrCode';
+import { api } from '../lib/api';
+import { P2PManager, randomId, type P2PSnapshot } from '../lib/p2p/manager';
 import { RoomConnection, roomSocketUrl, type ConnectionStatus } from '../lib/room-connection';
 import {
   decryptItem,
@@ -78,6 +83,8 @@ function Room({ secret }: { secret: string }) {
   const [typing, setTyping] = useState(false);
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const connection = useRef<RoomConnection | null>(null);
+  const [p2p, setP2p] = useState<P2PManager | null>(null);
+  const [transfers, setTransfers] = useState<P2PSnapshot>({ outgoing: [], incoming: [] });
 
   useEffect(() => () => clearTimeout(typingTimer.current), []);
 
@@ -91,9 +98,22 @@ function Room({ secret }: { secret: string }) {
 
   useEffect(() => {
     if (!room) return;
+    let lastPeers = 0;
+    // Doğrudan aktarım sinyalleri oda anahtarıyla şifrelenip oda kanalından geçer.
+    const manager = new P2PManager({
+      clientId: randomId(),
+      sendSignal: (signal) => {
+        void sealRoomSignal(room, signal).then((sealed) =>
+          connection.current?.send({ type: 'signal', signal: sealed }),
+        );
+      },
+      iceServers: () => api.getRtcConfig().catch(() => []),
+      onChange: setTransfers,
+    });
     const handle = async (message: ServerMessage) => {
       switch (message.type) {
         case 'welcome': {
+          lastPeers = message.peers;
           setPeers(message.peers);
           const decrypted = await Promise.all(message.history.map((i) => decryptItem(room, i)));
           // Yeniden bağlanınca geçmiş sunucudakiyle değiştirilir.
@@ -108,7 +128,17 @@ function Room({ secret }: { secret: string }) {
           break;
         }
         case 'presence':
+          // Yeni bir cihaz katıldıysa süren doğrudan aktarımları ona da duyur.
+          if (message.peers > lastPeers) manager.reannounce();
+          lastPeers = message.peers;
           setPeers(message.peers);
+          break;
+        case 'signal':
+          try {
+            manager.handleSignal(await openRoomSignal(room, message.signal));
+          } catch {
+            // Çözülemeyen sinyaller yok sayılır.
+          }
           break;
         case 'typing':
           setTyping(true);
@@ -128,9 +158,12 @@ function Room({ secret }: { secret: string }) {
       onStatus: setStatus,
     });
     connection.current = conn;
+    setP2p(manager);
     return () => {
+      manager.close();
       conn.close();
       connection.current = null;
+      setP2p(null);
     };
   }, [room]);
 
@@ -159,6 +192,7 @@ function Room({ secret }: { secret: string }) {
         }}
         onTyping={() => connection.current?.send({ type: 'typing' })}
       />
+      <DirectTransfer manager={p2p} snapshot={transfers} />
       <Feed
         entries={entries}
         typing={typing}

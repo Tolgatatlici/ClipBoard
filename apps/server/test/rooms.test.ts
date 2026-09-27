@@ -97,6 +97,19 @@ describe('rooms', () => {
     await expect(a.next('typing')).rejects.toThrow(/Timed out/);
   });
 
+  it('relays signals to other devices without storing them', async () => {
+    const a = connect(baseUrl);
+    await a.next('welcome');
+    const b = connect(baseUrl);
+    await b.next('welcome');
+    const signal = { ct: 'encryptedsignal', iv: 'I'.repeat(16) };
+    a.send({ type: 'signal', signal });
+    expect(await b.next('signal')).toEqual({ type: 'signal', signal });
+    await expect(a.next('signal')).rejects.toThrow(/Timed out/);
+    const c = connect(baseUrl);
+    expect(await c.next('welcome')).toMatchObject({ history: [] });
+  });
+
   it('clears the room', async () => {
     const a = connect(baseUrl);
     await a.next('welcome');

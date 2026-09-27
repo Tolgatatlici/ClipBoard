@@ -17,6 +17,11 @@ describe('GET /api/health', () => {
     expect(res.headers['strict-transport-security']).toBeDefined();
   });
 
+  it('exposes the WebRTC configuration', async () => {
+    const res = await ctx.app.inject({ method: 'GET', url: '/api/rtc-config' });
+    expect(res.json()).toEqual({ iceServers: [] });
+  });
+
   it('returns a JSON 404 for unknown routes', async () => {
     const res = await ctx.app.inject({ method: 'GET', url: '/nope' });
     expect(res.statusCode).toBe(404);

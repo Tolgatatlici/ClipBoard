@@ -26,6 +26,9 @@ dönüş yapmayı hedefliyoruz.
   sunarak gelecekteki paylaşımların anahtarlarını çalabilir (tüm web tabanlı E2E
   uygulamalarının ortak sınırı).
 - Şifreli verinin boyutu ve paylaşım zamanları sunucuya görünür.
+- Doğrudan (WebRTC) aktarımda cihazlar birbirinin IP adresini görür (P2P'nin doğası);
+  sunucu görmez, çünkü sinyaller oda anahtarıyla şifrelidir. TURN kullanılıyorsa TURN
+  sunucusu yalnızca DTLS ile şifreli trafiği aktarır.
 - Cihaz eşleştirmede güvenlik, kullanıcının iki ekrandaki doğrulama numarasını gerçekten
   karşılaştırmasına bağlıdır; karşılaştırmadan onaylanırsa kötü niyetli bir sunucu araya
   girebilir (numarayı tutturma olasılığı 1/1 000 000).

@@ -31,7 +31,12 @@ export default defineConfig({
       // POSIX yerel ayarında Chromium ASCII dışı indirme adlarını "download" yapar.
       env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' },
       // Service worker kaydı `ignoreHTTPSErrors`'u dikkate almaz; yerel sertifika için gerekir.
-      args: process.env.E2E_IGNORE_HTTPS_ERRORS ? ['--ignore-certificate-errors'] : [],
+      args: [
+        // WebRTC testleri için: yerel IP'ler mDNS adlarının ardına gizlenmesin
+        // (konteynerde .local adları çözülemeyebilir).
+        '--disable-features=WebRtcHideLocalIpsWithMdns',
+        ...(process.env.E2E_IGNORE_HTTPS_ERRORS ? ['--ignore-certificate-errors'] : []),
+      ],
     },
   },
   projects: [

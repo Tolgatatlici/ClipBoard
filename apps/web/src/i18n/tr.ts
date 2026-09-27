@@ -170,6 +170,33 @@ export const tr = {
     connecting: 'Diğer cihaza bağlanılıyor…',
     notFound: 'Kod bulunamadı, süresi dolmuş ya da kullanılmış. Odadaki cihazda yeni bir kod alın.',
   },
+  p2p: {
+    title: 'Doğrudan gönder',
+    intro:
+      'Büyük dosyaları (2 GB’a kadar) sunucudan geçmeden, cihazdan cihaza gönderin. Alan cihaz bu sayfayı açık tutmalı.',
+    choose: 'Dosya seç ve duyur',
+    chooseFile: 'Doğrudan gönderilecek dosya',
+    waiting: 'Diğer cihazların kabul etmesi bekleniyor…',
+    device: 'Cihaz {id}',
+    cancel: 'Durdur',
+    incoming: 'Bir cihaz doğrudan dosya gönderiyor',
+    accept: 'Al',
+    decline: 'Reddet',
+    save: 'Kaydet',
+    dismiss: 'Kapat',
+    tooLarge: 'Doğrudan aktarımda dosya en fazla 2 GB olabilir.',
+    status: {
+      offered: 'Kabul bekleniyor',
+      connecting: 'Bağlanıyor…',
+      sending: 'Gönderiliyor',
+      receiving: 'Alınıyor',
+      done: 'Tamamlandı',
+      failed:
+        'Doğrudan bağlantı kurulamadı. Cihazlar farklı ağlardaysa sunucuda TURN yapılandırması gerekir.',
+      declined: 'Reddedildi',
+      cancelled: 'Gönderen durdurdu',
+    },
+  },
   notFound: { title: 'Sayfa bulunamadı', back: 'Ana sayfaya dön' },
   report: {
     title: 'Kötüye kullanım bildir',

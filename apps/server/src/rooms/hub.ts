@@ -188,6 +188,10 @@ export class RoomHub {
       case 'typing':
         await this.publish(roomId, { type: 'typing', from: peer.id });
         break;
+      case 'signal':
+        // WebRTC sinyali: saklanmaz, yalnızca şu an bağlı diğer cihazlara iletilir.
+        await this.publish(roomId, { type: 'signal', signal: message.signal, from: peer.id });
+        break;
       case 'clear':
         await this.redis.del(itemsKey(roomId));
         await this.publish(roomId, { type: 'cleared' });
@@ -223,7 +227,7 @@ export class RoomHub {
     const { from, ...message } = event;
     const payload = JSON.stringify(message);
     for (const peer of local) {
-      // "Yazıyor" bildirimi gönderenin kendisine gitmez.
+      // "Yazıyor" bildirimi ve sinyaller gönderenin kendisine gitmez.
       if (from && peer.id === from) continue;
       if (peer.socket.readyState === peer.socket.OPEN) peer.socket.send(payload);
     }

@@ -171,6 +171,33 @@ export const en: Messages = {
     connecting: 'Connecting to the other device…',
     notFound: 'Code not found, expired or already used. Get a new code on a device in the room.',
   },
+  p2p: {
+    title: 'Send directly',
+    intro:
+      'Send large files (up to 2 GB) device to device without going through the server. The receiving device must keep this page open.',
+    choose: 'Choose and announce a file',
+    chooseFile: 'File to send directly',
+    waiting: 'Waiting for other devices to accept…',
+    device: 'Device {id}',
+    cancel: 'Stop',
+    incoming: 'A device is sending a file directly',
+    accept: 'Accept',
+    decline: 'Decline',
+    save: 'Save',
+    dismiss: 'Close',
+    tooLarge: 'Files sent directly can be at most 2 GB.',
+    status: {
+      offered: 'Waiting for acceptance',
+      connecting: 'Connecting…',
+      sending: 'Sending',
+      receiving: 'Receiving',
+      done: 'Done',
+      failed:
+        'A direct connection could not be established. Devices on different networks need a TURN server configured.',
+      declined: 'Declined',
+      cancelled: 'Stopped by the sender',
+    },
+  },
   notFound: { title: 'Page not found', back: 'Back to home' },
   report: {
     title: 'Report abuse',
