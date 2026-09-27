@@ -1,0 +1,45 @@
+{
+  "extName": { "message": "ClipBoard" },
+  "extDescription": {
+    "message": "Seçili metni ya da sayfayı uçtan uca şifreli olarak diğer cihazlarınıza gönderin."
+  },
+  "shareSelection": { "message": "ClipBoard ile şifreli paylaş" },
+  "popupHeading": { "message": "Şifreli paylaş" },
+  "textLabel": { "message": "Metin" },
+  "textPlaceholder": { "message": "Paylaşmak istediğiniz metni yapıştırın…" },
+  "useCurrentPage": { "message": "Bu sayfanın linki" },
+  "ttlLabel": { "message": "Silinme süresi" },
+  "ttl5m": { "message": "5 dakika" },
+  "ttl1h": { "message": "1 saat" },
+  "ttl1d": { "message": "1 gün" },
+  "burn": { "message": "İlk açılışta sil" },
+  "submit": { "message": "Şifrele ve paylaş" },
+  "working": { "message": "Şifreleniyor…" },
+  "code": { "message": "Kod" },
+  "link": { "message": "Link" },
+  "copy": { "message": "Kopyala" },
+  "copied": { "message": "Kopyalandı ✓" },
+  "expires": { "message": "Silinme: $TIME$", "placeholders": { "time": { "content": "$1" } } },
+  "newShare": { "message": "Yeni paylaşım" },
+  "openHeading": { "message": "Kodla aç" },
+  "codeLabel": { "message": "Paylaşım kodu" },
+  "open": { "message": "Aç" },
+  "settings": { "message": "Ayarlar" },
+  "serverLabel": { "message": "Sunucu adresi" },
+  "serverHint": {
+    "message": "Kendi ClipBoard kurulumunuzun adresi. Farklı bir sunucu için tarayıcı izin isteyecek."
+  },
+  "save": { "message": "Kaydet" },
+  "saved": { "message": "Kaydedildi ✓" },
+  "invalidServer": { "message": "Geçerli bir https:// adresi girin." },
+  "permissionDenied": { "message": "Bu sunucuya erişim izni verilmedi." },
+  "resultHeading": { "message": "Paylaşım hazır" },
+  "resultMissing": { "message": "Paylaşım bulunamadı. Sağ tık menüsünden yeniden deneyin." },
+  "errorNetwork": { "message": "Sunucuya ulaşılamadı. Ayarlardaki adresi kontrol edin." },
+  "errorTooLarge": { "message": "Metin çok uzun (en fazla 100 KB)." },
+  "errorGeneric": {
+    "message": "Paylaşım oluşturulamadı: $MESSAGE$",
+    "placeholders": { "message": { "content": "$1" } }
+  },
+  "encryptedNote": { "message": "İçerik bu tarayıcıda şifrelenir; sunucu okuyamaz." }
+}

@@ -1,0 +1,45 @@
+{
+  "extName": { "message": "ClipBoard" },
+  "extDescription": {
+    "message": "Send the selected text or page to your other devices, end-to-end encrypted."
+  },
+  "shareSelection": { "message": "Share encrypted with ClipBoard" },
+  "popupHeading": { "message": "Share encrypted" },
+  "textLabel": { "message": "Text" },
+  "textPlaceholder": { "message": "Paste the text you want to share…" },
+  "useCurrentPage": { "message": "Link to this page" },
+  "ttlLabel": { "message": "Delete after" },
+  "ttl5m": { "message": "5 minutes" },
+  "ttl1h": { "message": "1 hour" },
+  "ttl1d": { "message": "1 day" },
+  "burn": { "message": "Delete after first view" },
+  "submit": { "message": "Encrypt and share" },
+  "working": { "message": "Encrypting…" },
+  "code": { "message": "Code" },
+  "link": { "message": "Link" },
+  "copy": { "message": "Copy" },
+  "copied": { "message": "Copied ✓" },
+  "expires": { "message": "Deleted: $TIME$", "placeholders": { "time": { "content": "$1" } } },
+  "newShare": { "message": "New share" },
+  "openHeading": { "message": "Open with a code" },
+  "codeLabel": { "message": "Share code" },
+  "open": { "message": "Open" },
+  "settings": { "message": "Settings" },
+  "serverLabel": { "message": "Server address" },
+  "serverHint": {
+    "message": "The address of your ClipBoard instance. The browser will ask for permission for a different server."
+  },
+  "save": { "message": "Save" },
+  "saved": { "message": "Saved ✓" },
+  "invalidServer": { "message": "Enter a valid https:// address." },
+  "permissionDenied": { "message": "Access to this server was not granted." },
+  "resultHeading": { "message": "Share ready" },
+  "resultMissing": { "message": "Share not found. Try again from the context menu." },
+  "errorNetwork": { "message": "Could not reach the server. Check the address in settings." },
+  "errorTooLarge": { "message": "The text is too long (max 100 KB)." },
+  "errorGeneric": {
+    "message": "Could not create the share: $MESSAGE$",
+    "placeholders": { "message": { "content": "$1" } }
+  },
+  "encryptedNote": { "message": "Content is encrypted in this browser; the server cannot read it." }
+}

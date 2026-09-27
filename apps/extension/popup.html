@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>ClipBoard</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body class="popup">
+    <main>
+      <h1 data-i18n="popupHeading"></h1>
+      <form id="share-form">
+        <div class="row">
+          <label for="text" data-i18n="textLabel"></label>
+          <span class="spacer"></span>
+          <button
+            type="button"
+            id="use-page"
+            class="link-button"
+            data-i18n="useCurrentPage"
+          ></button>
+        </div>
+        <textarea id="text" data-i18n-placeholder="textPlaceholder" spellcheck="false"></textarea>
+        <label for="ttl" data-i18n="ttlLabel"></label>
+        <select id="ttl">
+          <option value="5m" data-i18n="ttl5m"></option>
+          <option value="1h" data-i18n="ttl1h" selected></option>
+          <option value="1d" data-i18n="ttl1d"></option>
+        </select>
+        <label class="row check">
+          <input type="checkbox" id="burn" />
+          <span data-i18n="burn"></span>
+        </label>
+        <p id="error" class="error" role="alert"></p>
+        <button type="submit" id="submit" data-i18n="submit"></button>
+        <p class="muted" data-i18n="encryptedNote"></p>
+      </form>
+      <section id="result" hidden>
+        <div id="result-body" class="stack"></div>
+        <button type="button" id="new-share" class="secondary" data-i18n="newShare"></button>
+      </section>
+      <hr />
+      <form id="open-form">
+        <h2 data-i18n="openHeading"></h2>
+        <label for="open-code" data-i18n="codeLabel"></label>
+        <div class="row">
+          <input id="open-code" placeholder="ABCD-EFGH" autocomplete="off" spellcheck="false" />
+          <button type="submit" data-i18n="open"></button>
+        </div>
+      </form>
+      <button type="button" id="settings" class="link-button" data-i18n="settings"></button>
+    </main>
+    <script type="module" src="/src/popup.ts"></script>
+  </body>
+</html>

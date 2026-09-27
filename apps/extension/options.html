@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>ClipBoard</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body class="page">
+    <main>
+      <h1 data-i18n="settings"></h1>
+      <form id="options-form">
+        <label for="server" data-i18n="serverLabel"></label>
+        <input id="server" type="url" required />
+        <p class="muted" data-i18n="serverHint"></p>
+        <button type="submit" data-i18n="save"></button>
+        <p id="status" role="status"></p>
+      </form>
+    </main>
+    <script type="module" src="/src/options.ts"></script>
+  </body>
+</html>

@@ -13,6 +13,7 @@ apps/
 packages/
   shared/     Şifreleme, Zod şemaları, API istemcisi ve ortak tipler
   cli/        Komut satırı aracı (`clip put` / `clip get`)
+apps/extension/   Tarayıcı eklentisi (Chrome/Edge, Manifest V3)
 ```
 
 ## Gereksinimler
@@ -76,6 +77,17 @@ clip get "https://clip.example.com/c/…#k=…" -o cikti.txt
 ```
 
 Şifreleme web uygulamasıyla aynıdır; CLI ile paylaşılan içerik tarayıcıda, tarayıcıda paylaşılan içerik CLI ile açılabilir. Tüm seçenekler için `clip --help`.
+
+## Tarayıcı eklentisi
+
+Chrome/Edge (Manifest V3) eklentisi: açılır pencereden metin ya da bulunulan sayfanın linkini şifreli paylaşma, kodla açma ve sağ tık menüsüyle seçili metni paylaşma.
+
+```bash
+EXTENSION_DEFAULT_SERVER=https://clip.example.com pnpm --filter @clipboard/extension build
+# chrome://extensions → Geliştirici modu → "Paketlenmemiş öğe yükle" → apps/extension/dist
+```
+
+Eklenti yalnızca derlemede verilen sunucuya erişim izni ister; ayarlarda başka bir sunucu girilirse izin o anda sorulur. Şifreleme eklentinin içinde yapılır.
 
 ## Nasıl çalışır?
 

@@ -15,6 +15,7 @@ const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
 
 export default defineConfig({
   testDir: 'e2e',
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: isCI,
   reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list',
