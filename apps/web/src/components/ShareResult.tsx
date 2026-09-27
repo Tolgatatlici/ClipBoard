@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useT } from '../i18n/use-i18n';
 import type { CreatedClip } from '../lib/clips';
 import { api } from '../lib/api';
 import { removeDeleteToken } from '../lib/delete-tokens';
 import { CopyButton } from './CopyButton';
-import { Countdown } from './Countdown';
+import { ExpiresIn } from './Countdown';
 import { ErrorAlert } from './ErrorAlert';
 import { QrCode } from './QrCode';
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ShareResult({ clip, onDone }: Props) {
+  const t = useT();
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -34,10 +36,10 @@ export function ShareResult({ clip, onDone }: Props) {
   if (deleted) {
     return (
       <section className="card flex flex-col items-start gap-4">
-        <h2 className="text-lg font-semibold">İçerik silindi</h2>
-        <p className="muted">Bu içerik artık hiçbir cihazdan açılamaz.</p>
+        <h2 className="text-lg font-semibold">{t('result.deletedTitle')}</h2>
+        <p className="muted">{t('result.deletedBody')}</p>
         <button type="button" className="btn-primary" onClick={onDone}>
-          Yeni paylaşım
+          {t('common.newShare')}
         </button>
       </section>
     );
@@ -47,18 +49,18 @@ export function ShareResult({ clip, onDone }: Props) {
     <section className="card flex flex-col gap-6" aria-labelledby="share-title">
       <div>
         <h2 id="share-title" className="text-lg font-semibold">
-          Hazır! Diğer cihazda açın
+          {t('result.readyTitle')}
         </h2>
         <p className="muted mt-1">
-          <Countdown expiresAt={clip.expiresAt} /> sonra silinecek
-          {clip.burnAfterRead && ' · ilk açılışta silinir'}
-          {clip.hasPassword && ' · parola korumalı'}
+          <ExpiresIn expiresAt={clip.expiresAt} />
+          {clip.burnAfterRead && t('result.burnNote')}
+          {clip.hasPassword && t('result.passwordNote')}
         </p>
       </div>
 
       {clip.code && (
         <div className="flex flex-col gap-2">
-          <span className="label">Kod</span>
+          <span className="label">{t('result.codeLabel')}</span>
           <div className="flex flex-wrap items-center gap-3">
             <output
               data-testid="share-code"
@@ -66,16 +68,16 @@ export function ShareResult({ clip, onDone }: Props) {
             >
               {clip.code}
             </output>
-            <CopyButton text={clip.code} label="Kodu kopyala" />
+            <CopyButton text={clip.code} label={t('result.copyCode')} />
           </div>
-          <p className="muted">Diğer cihazda bu siteyi açıp kodu girin.</p>
+          <p className="muted">{t('result.codeHint')}</p>
         </div>
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <label className="label" htmlFor="share-link">
-            Link
+            {t('result.linkLabel')}
           </label>
           <div className="flex gap-2">
             <input
@@ -86,17 +88,20 @@ export function ShareResult({ clip, onDone }: Props) {
               readOnly
               onFocus={(event) => event.target.select()}
             />
-            <CopyButton text={clip.link} label="Linki kopyala" className="btn-secondary shrink-0" />
+            <CopyButton
+              text={clip.link}
+              label={t('result.copyLink')}
+              className="btn-secondary shrink-0"
+            />
           </div>
           <p className="muted">
-            Linkteki anahtar sunucuya gönderilmez.
-            {clip.code &&
-              ' Kod kısa olduğu için hassas veriler için link veya QR kodu tercih edin.'}
+            {t('result.linkHint')}
+            {clip.code && ` ${t('result.codeWarning')}`}
           </p>
         </div>
         <div className="flex flex-col items-center gap-1">
           <QrCode value={clip.link} />
-          <span className="muted text-xs">Telefonla okutun</span>
+          <span className="muted text-xs">{t('common.scanWithPhone')}</span>
         </div>
       </div>
 
@@ -104,10 +109,10 @@ export function ShareResult({ clip, onDone }: Props) {
 
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn-primary" onClick={onDone}>
-          Yeni paylaşım
+          {t('common.newShare')}
         </button>
         <button type="button" className="btn-danger" onClick={handleDelete} disabled={deleting}>
-          {deleting ? 'Siliniyor…' : 'Şimdi sil'}
+          {deleting ? t('common.deleting') : t('common.deleteNow')}
         </button>
       </div>
     </section>

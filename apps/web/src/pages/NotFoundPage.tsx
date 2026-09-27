@@ -1,13 +1,15 @@
 import { Link } from 'react-router';
+import { useT } from '../i18n/use-i18n';
 import { useTitle } from '../lib/use-title';
 
 export function NotFoundPage() {
-  useTitle('Sayfa bulunamadı');
+  useTitle('titles.notFound');
+  const t = useT();
   return (
     <section className="card flex flex-col items-start gap-4">
-      <h1 className="text-xl font-semibold">Sayfa bulunamadı</h1>
+      <h1 className="text-xl font-semibold">{t('notFound.title')}</h1>
       <Link to="/" className="btn-primary">
-        Ana sayfaya dön
+        {t('notFound.back')}
       </Link>
     </section>
   );

@@ -1,19 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { REPORT_REASONS, type ReportReason } from '@clipboard/shared';
+import { useT } from '../i18n/use-i18n';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { api } from '../lib/api';
 import { useTitle } from '../lib/use-title';
 
-const REASON_LABELS: Record<ReportReason, string> = {
-  illegal: 'Yasa dışı içerik',
-  malware: 'Zararlı yazılım',
-  phishing: 'Kimlik avı / dolandırıcılık',
-  copyright: 'Telif hakkı ihlali',
-  other: 'Diğer',
-};
-
 export function ReportPage() {
-  useTitle('Kötüye kullanım bildir');
+  useTitle('titles.report');
+  const t = useT();
   const [target, setTarget] = useState('');
   const [reason, setReason] = useState<ReportReason>('illegal');
   const [details, setDetails] = useState('');
@@ -39,8 +33,8 @@ export function ReportPage() {
   if (sent) {
     return (
       <section className="card flex flex-col gap-2" role="status">
-        <h1 className="text-xl font-semibold">Bildiriminiz alındı</h1>
-        <p className="muted">Teşekkürler. Bildirimi en kısa sürede inceleyeceğiz.</p>
+        <h1 className="text-xl font-semibold">{t('report.sentTitle')}</h1>
+        <p className="muted">{t('report.sentBody')}</p>
       </section>
     );
   }
@@ -48,16 +42,12 @@ export function ReportPage() {
   return (
     <form className="card flex flex-col gap-4" onSubmit={handleSubmit}>
       <div>
-        <h1 className="text-xl font-semibold">Kötüye kullanım bildir</h1>
-        <p className="muted">
-          İçerik şifreli olduğu için onu ancak siz linki paylaşırsanız inceleyebiliriz. Linkin
-          tamamını (# işaretinden sonrası dahil) yapıştırırsanız içeriği görebilir ve gerekirse
-          silebiliriz.
-        </p>
+        <h1 className="text-xl font-semibold">{t('report.title')}</h1>
+        <p className="muted">{t('report.intro')}</p>
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="report-target" className="label">
-          Link ya da kod
+          {t('report.target')}
         </label>
         <input
           id="report-target"
@@ -71,7 +61,7 @@ export function ReportPage() {
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="report-reason" className="label">
-          Neden
+          {t('report.reason')}
         </label>
         <select
           id="report-reason"
@@ -81,14 +71,14 @@ export function ReportPage() {
         >
           {REPORT_REASONS.map((value) => (
             <option key={value} value={value}>
-              {REASON_LABELS[value]}
+              {t(`report.reasons.${value}`)}
             </option>
           ))}
         </select>
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="report-details" className="label">
-          Açıklama (isteğe bağlı)
+          {t('report.details')}
         </label>
         <textarea
           id="report-details"
@@ -100,7 +90,7 @@ export function ReportPage() {
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="report-contact" className="label">
-          E-posta (isteğe bağlı, size dönüş yapabilmemiz için)
+          {t('report.contact')}
         </label>
         <input
           id="report-contact"
@@ -118,7 +108,7 @@ export function ReportPage() {
           className="btn-primary"
           disabled={sending || target.trim().length < 4}
         >
-          {sending ? 'Gönderiliyor…' : 'Bildir'}
+          {sending ? t('report.sending') : t('report.submit')}
         </button>
       </div>
     </form>

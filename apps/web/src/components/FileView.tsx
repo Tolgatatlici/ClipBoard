@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Bytes } from '@clipboard/shared';
+import { useT } from '../i18n/use-i18n';
 import { saveBytes } from '../lib/download';
 import { formatBytes } from '../lib/format';
 import { ErrorAlert } from './ErrorAlert';
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function FileView({ name, mime, size, load }: Props) {
+  const t = useT();
   const isImage = mime.startsWith('image/');
   const [loaded, setLoaded] = useState<{ bytes: Bytes; previewUrl: string | null } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -84,7 +86,7 @@ export function FileView({ name, mime, size, load }: Props) {
           </p>
         </div>
         <button type="button" className="btn-primary shrink-0" onClick={download} disabled={busy}>
-          {busy ? 'İndiriliyor…' : 'İndir'}
+          {busy ? t('common.downloading') : t('common.download')}
         </button>
       </div>
       {previewUrl && (

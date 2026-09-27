@@ -7,17 +7,11 @@ import {
   type TextFormat,
   type TtlOption,
 } from '@clipboard/shared';
+import { useT } from '../i18n/use-i18n';
 import { createClip, type CreatedClip } from '../lib/clips';
 import { formatBytes, utf8Length } from '../lib/format';
 import { ErrorAlert } from './ErrorAlert';
 import { FileIcon } from './FileView';
-
-const TTL_LABELS: Record<TtlOption, string> = {
-  '5m': '5 dakika',
-  '1h': '1 saat',
-  '1d': '1 gün',
-  '7d': '7 gün',
-};
 
 const ttlAllowedWithCode = (ttl: TtlOption) => TTL_OPTIONS[ttl] <= TTL_OPTIONS[MAX_SHORT_CODE_TTL];
 
@@ -32,6 +26,7 @@ interface ShareFormProps {
 }
 
 export function ShareForm({ onCreated, initialText = '', initialFile = null }: ShareFormProps) {
+  const t = useT();
   const [text, setText] = useState(initialText);
   const [format, setFormat] = useState<TextFormat>('plain');
   const [file, setFile] = useState<File | null>(initialFile);
@@ -142,14 +137,14 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {file ? (
-            <h2 className="text-lg font-semibold">Paylaşılacak dosya</h2>
+            <h2 className="text-lg font-semibold">{t('share.fileHeading')}</h2>
           ) : (
             <label htmlFor="clip-text" className="text-lg font-semibold">
-              Paylaşmak istediğiniz metni yapıştırın
+              {t('share.heading')}
             </label>
           )}
           {!file && (
-            <div className="flex gap-1" role="radiogroup" aria-label="Biçim">
+            <div className="flex gap-1" role="radiogroup" aria-label={t('common.format')}>
               {(['plain', 'code'] as const).map((option) => (
                 <label key={option} className={segmentClass}>
                   <input
@@ -159,7 +154,7 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
                     checked={format === option}
                     onChange={() => setFormat(option)}
                   />
-                  {option === 'plain' ? 'Metin' : 'Kod'}
+                  {option === 'plain' ? t('common.text') : t('common.code')}
                 </label>
               ))}
             </div>
@@ -171,10 +166,13 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
             <FileIcon />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium" data-testid="attached-file">
-                {file.name || 'Yapıştırılan görsel'}
+                {file.name || t('share.pastedImage')}
               </p>
               <p className={tooLarge ? 'text-xs font-medium text-red-600' : 'muted text-xs'}>
-                {formatBytes(file.size)} / en fazla {formatBytes(LIMITS.maxFileBytes)}
+                {t('share.maxFile', {
+                  size: formatBytes(file.size),
+                  max: formatBytes(LIMITS.maxFileBytes),
+                })}
               </p>
             </div>
             <button
@@ -183,7 +181,7 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
               onClick={() => attach(null)}
               disabled={saving}
             >
-              Kaldır
+              {t('share.remove')}
             </button>
           </div>
         ) : (
@@ -193,7 +191,7 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
             value={text}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Metin, link, kod parçası… ya da bir dosyayı buraya sürükleyin"
+            placeholder={t('share.placeholder')}
             spellCheck={false}
             autoFocus
           />
@@ -206,20 +204,20 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
               className="font-medium text-indigo-600 hover:underline dark:text-indigo-400"
               onClick={() => fileInput.current?.click()}
             >
-              {file ? 'Başka dosya seç' : 'Dosya ekle'}
+              {file ? t('share.chooseAnother') : t('share.addFile')}
             </button>
             <input
               ref={fileInput}
               type="file"
               className="sr-only"
-              aria-label="Dosya seç"
+              aria-label={t('share.chooseFile')}
               data-testid="file-input"
               onChange={(event) => {
                 attach(event.target.files?.[0] ?? null);
                 event.target.value = '';
               }}
             />
-            {!file && <span className="muted hidden sm:inline">Ctrl/⌘ + Enter ile kaydedin</span>}
+            {!file && <span className="muted hidden sm:inline">{t('share.saveHint')}</span>}
           </span>
           {!file && (
             <span className={tooLarge ? 'font-medium text-red-600' : 'muted'}>
@@ -230,7 +228,7 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="label mb-2">Silinme süresi</legend>
+        <legend className="label mb-2">{t('share.ttlLegend')}</legend>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(TTL_OPTIONS) as TtlOption[]).map((option) => (
             <label key={option} className={segmentClass}>
@@ -243,13 +241,13 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
                 onChange={() => setTtl(option)}
                 className="sr-only"
               />
-              {TTL_LABELS[option]}
+              {t(`ttl.${option}`)}
             </label>
           ))}
         </div>
         {withCode && (
           <p className="muted text-xs">
-            Kısa kodlu paylaşımlar en fazla {TTL_LABELS[MAX_SHORT_CODE_TTL]} saklanır.
+            {t('share.ttlCodeHint', { max: t(`ttl.${MAX_SHORT_CODE_TTL}`) })}
           </p>
         )}
       </fieldset>
@@ -263,7 +261,7 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
             onChange={(event) => handleWantCodeChange(event.target.checked)}
             className="h-4 w-4 accent-indigo-600"
           />
-          Kısa kod oluştur
+          {t('share.withCode')}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -272,7 +270,7 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
             onChange={(event) => setBurnAfterRead(event.target.checked)}
             className="h-4 w-4 accent-indigo-600"
           />
-          İlk açılışta sil
+          {t('share.burn')}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -281,14 +279,14 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
             onChange={(event) => handlePasswordToggle(event.target.checked)}
             className="h-4 w-4 accent-indigo-600"
           />
-          Parola ile koru
+          {t('share.protect')}
         </label>
       </div>
 
       {usePassword && (
         <div className="flex flex-col gap-1">
           <label htmlFor="clip-password" className="label">
-            Parola
+            {t('common.password')}
           </label>
           <input
             id="clip-password"
@@ -298,10 +296,7 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="new-password"
           />
-          <p className="muted text-xs">
-            Açmak için hem link hem parola gerekir. Parolayı linkten ayrı bir yoldan iletin; kısa
-            kod bu seçenekle kullanılamaz.
-          </p>
+          <p className="muted text-xs">{t('share.passwordHint')}</p>
         </div>
       )}
 
@@ -309,21 +304,25 @@ export function ShareForm({ onCreated, initialText = '', initialFile = null }: S
 
       <div className="flex items-center gap-4">
         <button type="submit" className="btn-primary px-6 py-2.5" disabled={!canSave}>
-          {saving ? (progress !== null ? 'Yükleniyor…' : 'Şifreleniyor…') : 'Şifrele ve paylaş'}
+          {saving
+            ? progress !== null
+              ? t('share.uploading')
+              : t('share.encrypting')
+            : t('share.submit')}
         </button>
         {progress !== null && (
           <progress
             className="h-2 flex-1 accent-indigo-600"
             value={progress}
             max={1}
-            aria-label="Yükleme ilerlemesi"
+            aria-label={t('common.uploadProgress')}
           />
         )}
       </div>
 
       {dragging && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-indigo-50/90 text-lg font-medium text-indigo-700 dark:bg-indigo-950/90 dark:text-indigo-300">
-          Dosyayı bırakın
+          {t('common.dropFile')}
         </div>
       )}
     </form>

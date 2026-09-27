@@ -7,6 +7,7 @@ import {
   ROOM_CODE_LENGTH,
   type ParsedCode,
 } from '@clipboard/shared';
+import { useT } from '../i18n/use-i18n';
 import { formatCodeInput } from '../lib/code-input';
 
 interface FieldProps<T> {
@@ -22,6 +23,7 @@ interface FieldProps<T> {
 
 function CodeField<T>(props: FieldProps<T>) {
   const { label, placeholder, length, split, parse, onSubmit, submitLabel, busy } = props;
+  const t = useT();
   const inputId = useId();
   const [value, setValue] = useState('');
   const parsed = parse(value);
@@ -50,7 +52,7 @@ function CodeField<T>(props: FieldProps<T>) {
           inputMode="text"
         />
         <button type="submit" className="btn-primary shrink-0" disabled={!parsed || busy}>
-          {busy ? 'Açılıyor…' : submitLabel}
+          {busy ? t('common.opening') : submitLabel}
         </button>
       </div>
     </form>
@@ -63,32 +65,34 @@ interface Props<T> {
   busy?: boolean;
 }
 
-export function CodeInput({ onSubmit, submitLabel = 'Aç', busy = false }: Props<ParsedCode>) {
+export function CodeInput({ onSubmit, submitLabel, busy = false }: Props<ParsedCode>) {
+  const t = useT();
   return (
     <CodeField
-      label="Paylaşım kodu"
+      label={t('codeInput.clipLabel')}
       placeholder="ABCD-EFGH"
       length={CODE_LENGTH}
       split={CODE_ID_LENGTH}
       parse={parseCode}
       onSubmit={onSubmit}
-      submitLabel={submitLabel}
+      submitLabel={submitLabel ?? t('common.open')}
       busy={busy}
     />
   );
 }
 
 /** Oda kodu girişi; normalize edilmiş 10 karakterlik kodu döner. */
-export function RoomCodeInput({ onSubmit, submitLabel = 'Katıl', busy = false }: Props<string>) {
+export function RoomCodeInput({ onSubmit, submitLabel, busy = false }: Props<string>) {
+  const t = useT();
   return (
     <CodeField
-      label="Oda kodu"
+      label={t('codeInput.roomLabel')}
       placeholder="ABCDE-FGHJK"
       length={ROOM_CODE_LENGTH}
       split={5}
       parse={parseRoomCode}
       onSubmit={onSubmit}
-      submitLabel={submitLabel}
+      submitLabel={submitLabel ?? t('codeInput.join')}
       busy={busy}
     />
   );

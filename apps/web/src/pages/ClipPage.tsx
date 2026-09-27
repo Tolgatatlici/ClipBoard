@@ -10,7 +10,7 @@ import {
 import { CodeBlock, PlainText } from '../components/CodeBlock';
 import { CodeInput } from '../components/CodeInput';
 import { CopyButton } from '../components/CopyButton';
-import { Countdown } from '../components/Countdown';
+import { ExpiresIn } from '../components/Countdown';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { FileView } from '../components/FileView';
 import { PasswordPrompt } from '../components/PasswordPrompt';
@@ -26,6 +26,7 @@ import {
 } from '../lib/clips';
 import { getDeleteToken, removeDeleteToken } from '../lib/delete-tokens';
 import { saveBytes } from '../lib/download';
+import { useT } from '../i18n/use-i18n';
 import { useTitle } from '../lib/use-title';
 
 type State =
@@ -54,13 +55,14 @@ function isRetryableCodeError(error: unknown): boolean {
 }
 
 export function ClipPage() {
-  useTitle('Paylaşılan içerik');
+  useTitle('titles.clip');
   // URL (kimlik veya `#` kısmı) değişince sayfa sıfırdan kurulur ve yükleniyor durumuna döner.
   const { pathname, hash } = useLocation();
   return <ClipLoader key={pathname + hash} />;
 }
 
 function ClipLoader() {
+  const t = useT();
   const { id = '' } = useParams();
   const { hash } = useLocation();
   const navigate = useNavigate();
@@ -156,7 +158,9 @@ function ClipLoader() {
     case 'opening':
       return (
         <section className="card" aria-busy="true">
-          <p className="muted">{state.step === 'loading' ? 'Yükleniyor…' : 'Şifre çözülüyor…'}</p>
+          <p className="muted">
+            {state.step === 'loading' ? t('clip.loading') : t('clip.decrypting')}
+          </p>
         </section>
       );
 
@@ -164,8 +168,8 @@ function ClipLoader() {
       return (
         <section className="card flex flex-col gap-4">
           <div>
-            <h1 className="text-xl font-semibold">Kodu girin</h1>
-            <p className="muted">Bu içeriği açmak için paylaşım kodunun tamamı gerekiyor.</p>
+            <h1 className="text-xl font-semibold">{t('clip.needCodeTitle')}</h1>
+            <p className="muted">{t('clip.needCodeBody')}</p>
           </div>
           {state.error !== undefined && <ErrorAlert error={state.error} />}
           <CodeInput onSubmit={submitCode} />
@@ -176,11 +180,10 @@ function ClipLoader() {
       return (
         <section className="card flex flex-col gap-4">
           <div>
-            <h1 className="text-xl font-semibold">Parola korumalı içerik</h1>
+            <h1 className="text-xl font-semibold">{t('clip.passwordTitle')}</h1>
             <p className="muted">
-              Paylaşan kişinin size ilettiği parolayı girin.
-              {state.burnAfterRead &&
-                ' İçerik tek okumalıktır: parolayı ilk girişinizde sunucudan silinir, bu sayfayı kapatmadan doğru parolayı girin.'}
+              {t('clip.passwordBody')}
+              {state.burnAfterRead && ` ${t('clip.burnPasswordWarning')}`}
             </p>
           </div>
           {state.error !== undefined && <ErrorAlert error={state.error} />}
@@ -193,13 +196,10 @@ function ClipLoader() {
     case 'missing-key':
       return (
         <section className="card flex flex-col items-start gap-4">
-          <h1 className="text-xl font-semibold">Link eksik</h1>
-          <p className="muted">
-            Bu linkte içeriği çözmek için gereken anahtar yok. Linki eksiksiz kopyaladığınızdan emin
-            olun.
-          </p>
+          <h1 className="text-xl font-semibold">{t('clip.missingKeyTitle')}</h1>
+          <p className="muted">{t('clip.missingKeyBody')}</p>
           <Link to="/" className="btn-secondary">
-            Ana sayfa
+            {t('common.home')}
           </Link>
         </section>
       );
@@ -207,16 +207,14 @@ function ClipLoader() {
     case 'confirm':
       return (
         <section className="card flex flex-col items-start gap-4">
-          <h1 className="text-xl font-semibold">Tek okumalık içerik</h1>
-          <p className="muted">
-            Bu içerik görüntülendiği anda sunucudan silinecek ve bir daha açılamayacak.
-          </p>
+          <h1 className="text-xl font-semibold">{t('clip.confirmTitle')}</h1>
+          <p className="muted">{t('clip.confirmBody')}</p>
           <button
             type="button"
             className="btn-primary"
             onClick={() => void handleConfirm(state.secret)}
           >
-            İçeriği göster
+            {t('clip.show')}
           </button>
         </section>
       );
@@ -229,9 +227,9 @@ function ClipLoader() {
     case 'deleted':
       return (
         <section className="card flex flex-col items-start gap-4">
-          <h1 className="text-xl font-semibold">İçerik silindi</h1>
+          <h1 className="text-xl font-semibold">{t('clip.deletedTitle')}</h1>
           <Link to="/" className="btn-primary">
-            Yeni paylaşım
+            {t('common.newShare')}
           </Link>
         </section>
       );
@@ -239,10 +237,10 @@ function ClipLoader() {
     case 'error':
       return (
         <section className="card flex flex-col items-start gap-4">
-          <h1 className="text-xl font-semibold">İçerik açılamadı</h1>
+          <h1 className="text-xl font-semibold">{t('clip.errorTitle')}</h1>
           <ErrorAlert error={state.error} />
           <Link to="/" className="btn-secondary">
-            Ana sayfa
+            {t('common.home')}
           </Link>
         </section>
       );
@@ -256,6 +254,7 @@ interface ClipViewProps {
 }
 
 function ClipView({ clip, deleteToken, onDelete }: ClipViewProps) {
+  const t = useT();
   const [deleting, setDeleting] = useState(false);
   const { content, file } = clip;
   const loadFile = useCallback(() => downloadFile(file!), [file]);
@@ -264,19 +263,17 @@ function ClipView({ clip, deleteToken, onDelete }: ClipViewProps) {
     <section className="card flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-semibold">
-          {content.kind === 'file' ? 'Paylaşılan dosya' : 'Paylaşılan içerik'}
+          {content.kind === 'file' ? t('clip.fileTitle') : t('clip.textTitle')}
         </h1>
         <p className="muted">
           {clip.burnAfterRead ? (
             content.kind === 'file' ? (
-              'Sunucudan silindi; dosyayı 15 dakika içinde indirin.'
+              t('clip.burnedFile')
             ) : (
-              'Sunucudan silindi; bu sayfayı kapatınca tekrar açılamaz.'
+              t('clip.burnedText')
             )
           ) : (
-            <>
-              <Countdown expiresAt={clip.expiresAt} /> sonra silinecek
-            </>
+            <ExpiresIn expiresAt={clip.expiresAt} />
           )}
         </p>
       </div>
@@ -300,7 +297,7 @@ function ClipView({ clip, deleteToken, onDelete }: ClipViewProps) {
               className="btn-secondary"
               onClick={() => saveBytes(content.text, 'clipboard.txt', 'text/plain;charset=utf-8')}
             >
-              İndir (.txt)
+              {t('clip.downloadTxt')}
             </button>
           </>
         )}
@@ -314,7 +311,7 @@ function ClipView({ clip, deleteToken, onDelete }: ClipViewProps) {
               await onDelete(deleteToken);
             }}
           >
-            {deleting ? 'Siliniyor…' : 'Şimdi sil'}
+            {deleting ? t('common.deleting') : t('common.deleteNow')}
           </button>
         )}
       </div>

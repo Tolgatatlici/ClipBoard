@@ -21,6 +21,8 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'retain-on-failure',
+    // Testler Türkçe arayüzü bekler; İngilizce ayrı bir testte denenir.
+    locale: 'tr-TR',
     // Yerel Caddy sertifikasıyla üretim kurulumunu test ederken.
     ignoreHTTPSErrors: !!process.env.E2E_IGNORE_HTTPS_ERRORS,
     launchOptions: {

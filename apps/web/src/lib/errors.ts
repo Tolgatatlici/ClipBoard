@@ -1,44 +1,35 @@
 import { DecryptionError, WrongPasswordError } from '@clipboard/shared';
+import type { Translate } from '../i18n/core';
 import { ApiError, NetworkError } from './api';
 import { FileTooLargeError } from './clips';
 import { RoomTextTooLargeError } from './rooms';
 
-/** Hatayı kullanıcıya gösterilecek Türkçe mesaja çevirir. */
-export function describeError(error: unknown): string {
+/** Hatayı kullanıcıya gösterilecek mesaja çevirir. */
+export function describeError(error: unknown, t: Translate): string {
   if (error instanceof ApiError) {
     switch (error.body.error) {
       case 'not_found':
-        return 'İçerik bulunamadı. Süresi dolmuş, silinmiş ya da tek okumalık olup zaten açılmış olabilir.';
+        return t('errors.notFound');
       case 'invalid_token':
         return error.body.remainingAttempts !== undefined
-          ? `Kod hatalı. Kalan deneme hakkı: ${error.body.remainingAttempts}.`
-          : 'Link geçersiz. Eksik kopyalanmış olabilir.';
+          ? t('errors.wrongCode', { n: error.body.remainingAttempts })
+          : t('errors.invalidLink');
       case 'code_locked':
-        return 'Çok fazla hatalı deneme yapıldığı için bu içerik artık kodla açılamıyor. Paylaşım linkini veya QR kodu kullanın.';
+        return t('errors.codeLocked');
       case 'rate_limited':
-        return 'Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.';
+        return t('errors.rateLimited');
       case 'file_missing':
-        return 'Dosya yüklemesi tamamlanamadı. Lütfen tekrar deneyin.';
+        return t('errors.fileMissing');
       case 'invalid_request':
-        return 'İstek geçersiz. Sayfayı yenileyip tekrar deneyin.';
+        return t('errors.invalidRequest');
       default:
-        return 'Sunucuda bir hata oluştu. Lütfen tekrar deneyin.';
+        return t('errors.server');
     }
   }
-  if (error instanceof NetworkError) {
-    return 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.';
-  }
-  if (error instanceof WrongPasswordError) {
-    return 'Parola yanlış.';
-  }
-  if (error instanceof FileTooLargeError) {
-    return 'Dosya çok büyük. En fazla 25 MB paylaşabilirsiniz.';
-  }
-  if (error instanceof RoomTextTooLargeError) {
-    return 'Metin canlı oda için çok uzun (en fazla 64 KB). Büyük metinleri dosya olarak gönderin.';
-  }
-  if (error instanceof DecryptionError) {
-    return 'İçerik çözülemedi. Link bozuk ya da eksik kopyalanmış olabilir.';
-  }
-  return 'Beklenmeyen bir hata oluştu.';
+  if (error instanceof NetworkError) return t('errors.network');
+  if (error instanceof WrongPasswordError) return t('errors.wrongPassword');
+  if (error instanceof FileTooLargeError) return t('errors.fileTooLarge');
+  if (error instanceof RoomTextTooLargeError) return t('errors.roomTextTooLarge');
+  if (error instanceof DecryptionError) return t('errors.decrypt');
+  return t('errors.unexpected');
 }

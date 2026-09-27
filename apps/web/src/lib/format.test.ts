@@ -1,4 +1,8 @@
+import { createTranslate } from '../i18n/core';
 import { formatBytes, formatRemaining, utf8Length } from './format';
+
+const tr = createTranslate('tr');
+const en = createTranslate('en');
 
 describe('formatRemaining', () => {
   it.each([
@@ -12,7 +16,13 @@ describe('formatRemaining', () => {
     [529_200_000, '6 gün 3 sa'],
     [604_800_000, '7 gün'],
   ])('%i ms → %s', (ms, expected) => {
-    expect(formatRemaining(ms)).toBe(expected);
+    expect(formatRemaining(ms, tr)).toBe(expected);
+  });
+
+  it('formats in English', () => {
+    expect(formatRemaining(252_000, en)).toBe('4 min 12 s');
+    expect(formatRemaining(529_200_000, en)).toBe('6 d 3 h');
+    expect(formatRemaining(0, en)).toBe('expired');
   });
 });
 

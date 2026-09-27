@@ -33,6 +33,7 @@ import {
   textItem,
   type RoomEntry,
 } from '../lib/rooms';
+import { useT } from '../i18n/use-i18n';
 import { useTitle } from '../lib/use-title';
 
 /** Karşı taraf yazıyor bildiriminin ne kadar süre gösterileceği. */
@@ -41,7 +42,8 @@ const TYPING_VISIBLE_MS = 3000;
 const TYPING_THROTTLE_MS = 2000;
 
 export function RoomPage() {
-  useTitle('Canlı oda');
+  useTitle('titles.room');
+  const t = useT();
   const { hash } = useLocation();
   const navigate = useNavigate();
   const raw = decodeURIComponent(hash.replace(/^#/, ''));
@@ -56,10 +58,10 @@ export function RoomPage() {
   if (!code) {
     return (
       <section className="card flex flex-col items-start gap-4">
-        <h1 className="text-xl font-semibold">Geçersiz oda kodu</h1>
-        <p className="muted">Oda kodu 10 karakterden oluşur, örneğin ABCDE-FGHJK.</p>
+        <h1 className="text-xl font-semibold">{t('room.invalidTitle')}</h1>
+        <p className="muted">{t('room.invalidBody')}</p>
         <Link to="/r" className="btn-primary">
-          Yeni oda oluştur
+          {t('room.newRoom')}
         </Link>
       </section>
     );
@@ -68,6 +70,7 @@ export function RoomPage() {
 }
 
 function Room({ code }: { code: string }) {
+  const t = useT();
   const [room, setRoom] = useState<RoomSecrets | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [roomFull, setRoomFull] = useState(false);
@@ -137,10 +140,10 @@ function Room({ code }: { code: string }) {
   if (roomFull) {
     return (
       <section className="card flex flex-col items-start gap-4">
-        <h1 className="text-xl font-semibold">Oda dolu</h1>
-        <p className="muted">Bu odaya bağlı cihaz sayısı sınıra ulaştı.</p>
+        <h1 className="text-xl font-semibold">{t('room.fullTitle')}</h1>
+        <p className="muted">{t('room.fullBody')}</p>
         <Link to="/r" className="btn-primary">
-          Yeni oda oluştur
+          {t('room.newRoom')}
         </Link>
       </section>
     );
@@ -174,17 +177,18 @@ function RoomHeader(props: {
   ready: boolean;
 }) {
   const { code, link, status, peers, ready } = props;
+  const t = useT();
   const [showQr, setShowQr] = useState(false);
   const formatted = formatRoomCode(code);
   const statusText = !ready
-    ? 'Anahtar hazırlanıyor…'
+    ? t('room.preparing')
     : status === 'open'
-      ? `Bağlı · ${peers} cihaz`
+      ? t('room.connected', { n: peers })
       : status === 'reconnecting'
-        ? 'Yeniden bağlanıyor…'
+        ? t('room.reconnecting')
         : status === 'closed'
-          ? 'Bağlantı kapandı'
-          : 'Bağlanıyor…';
+          ? t('room.closed')
+          : t('room.connecting');
   const dotClass =
     status === 'open' && ready
       ? 'bg-emerald-500'
@@ -197,12 +201,9 @@ function RoomHeader(props: {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 id="room-title" className="text-xl font-semibold">
-            Canlı oda
+            {t('room.title')}
           </h1>
-          <p className="muted">
-            Bu kodu diğer cihazda girin; gönderilen her şey anında görünür. Oda 24 saat hareketsiz
-            kalınca silinir.
-          </p>
+          <p className="muted">{t('room.intro')}</p>
         </div>
         <span className="flex items-center gap-2 text-sm" data-testid="room-status">
           <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} aria-hidden="true" />
@@ -216,19 +217,19 @@ function RoomHeader(props: {
         >
           {formatted}
         </output>
-        <CopyButton text={formatted} label="Kodu kopyala" />
-        <CopyButton text={link} label="Linki kopyala" />
+        <CopyButton text={formatted} label={t('room.copyCode')} />
+        <CopyButton text={link} label={t('room.copyLink')} />
         <button type="button" className="btn-secondary" onClick={() => setShowQr(!showQr)}>
-          {showQr ? 'QR gizle' : 'QR göster'}
+          {showQr ? t('room.hideQr') : t('room.showQr')}
         </button>
         <Link to="/" className="btn-secondary">
-          Odadan çık
+          {t('room.leave')}
         </Link>
       </div>
       {showQr && (
         <div className="flex flex-col items-start gap-1">
           <QrCode value={link} />
-          <span className="muted text-xs">Telefonla okutun</span>
+          <span className="muted text-xs">{t('common.scanWithPhone')}</span>
         </div>
       )}
     </section>
@@ -244,6 +245,7 @@ function Composer(props: {
   onTyping(): void;
 }) {
   const { disabled, onSend, onTyping } = props;
+  const t = useT();
   const [text, setText] = useState('');
   const [format, setFormat] = useState<TextFormat>('plain');
   const [busy, setBusy] = useState(false);
@@ -331,9 +333,9 @@ function Composer(props: {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <label htmlFor="room-text" className="font-semibold">
-          Odaya gönder
+          {t('room.composeLabel')}
         </label>
-        <div className="flex gap-1" role="radiogroup" aria-label="Biçim">
+        <div className="flex gap-1" role="radiogroup" aria-label={t('common.format')}>
           {(['plain', 'code'] as const).map((option) => (
             <label
               key={option}
@@ -346,7 +348,7 @@ function Composer(props: {
                 checked={format === option}
                 onChange={() => setFormat(option)}
               />
-              {option === 'plain' ? 'Metin' : 'Kod'}
+              {option === 'plain' ? t('common.text') : t('common.code')}
             </label>
           ))}
         </div>
@@ -357,13 +359,13 @@ function Composer(props: {
         value={text}
         onChange={(event) => handleChange(event.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Metin yapıştırın, görsel yapıştırın ya da dosya sürükleyin…"
+        placeholder={t('room.placeholder')}
         spellCheck={false}
       />
       {error !== null && <ErrorAlert error={error} />}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className="btn-primary" disabled={disabled || busy || !text.trim()}>
-          {busy && progress === null ? 'Gönderiliyor…' : 'Gönder'}
+          {busy && progress === null ? t('room.sending') : t('room.send')}
         </button>
         <button
           type="button"
@@ -371,13 +373,13 @@ function Composer(props: {
           disabled={disabled || busy}
           onClick={() => fileInput.current?.click()}
         >
-          Dosya gönder
+          {t('room.sendFile')}
         </button>
         <input
           ref={fileInput}
           type="file"
           className="sr-only"
-          aria-label="Odaya dosya seç"
+          aria-label={t('room.chooseFile')}
           data-testid="room-file-input"
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -390,14 +392,14 @@ function Composer(props: {
             className="h-2 flex-1 accent-indigo-600"
             value={progress}
             max={1}
-            aria-label="Yükleme ilerlemesi"
+            aria-label={t('common.uploadProgress')}
           />
         )}
-        <span className="muted hidden text-xs sm:inline">Ctrl/⌘ + Enter ile gönderin</span>
+        <span className="muted hidden text-xs sm:inline">{t('room.sendHint')}</span>
       </div>
       {dragging && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-indigo-50/90 text-lg font-medium text-indigo-700 dark:bg-indigo-950/90 dark:text-indigo-300">
-          Dosyayı bırakın
+          {t('common.dropFile')}
         </div>
       )}
     </form>
@@ -406,13 +408,14 @@ function Composer(props: {
 
 function Feed(props: { entries: RoomEntry[]; typing: boolean; onClear(): void }) {
   const { entries, typing, onClear } = props;
+  const t = useT();
   const [confirming, setConfirming] = useState(false);
 
   return (
     <section className="flex flex-col gap-3" aria-labelledby="feed-title">
       <div className="flex items-center justify-between gap-2">
         <h2 id="feed-title" className="font-semibold">
-          Paylaşılanlar
+          {t('room.feedTitle')}
         </h2>
         {entries.length > 0 &&
           (confirming ? (
@@ -425,26 +428,26 @@ function Feed(props: { entries: RoomEntry[]; typing: boolean; onClear(): void })
                   setConfirming(false);
                 }}
               >
-                Evet, temizle
+                {t('room.confirmClear')}
               </button>
               <button type="button" className="btn-secondary" onClick={() => setConfirming(false)}>
-                Vazgeç
+                {t('room.cancel')}
               </button>
             </span>
           ) : (
             <button type="button" className="btn-secondary" onClick={() => setConfirming(true)}>
-              Odayı temizle
+              {t('room.clear')}
             </button>
           ))}
       </div>
       {typing && (
         <p className="muted text-sm" aria-live="polite" data-testid="typing-indicator">
-          Diğer cihaz yazıyor…
+          {t('room.typing')}
         </p>
       )}
       {entries.length === 0 ? (
         <p className="muted rounded-2xl border border-dashed border-slate-300 p-6 text-center dark:border-slate-700">
-          Henüz bir şey paylaşılmadı.
+          {t('room.empty')}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -463,7 +466,8 @@ function Feed(props: { entries: RoomEntry[]; typing: boolean; onClear(): void })
 }
 
 function EntryContent({ content }: { content: RoomContent | null }) {
-  if (!content) return <p className="muted text-sm">Bu öğe çözülemedi.</p>;
+  const t = useT();
+  if (!content) return <p className="muted text-sm">{t('room.undecryptable')}</p>;
   if (content.kind === 'file') return <RoomFile content={content} />;
   return (
     <>

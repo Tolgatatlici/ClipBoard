@@ -1,9 +1,14 @@
 import { Link } from 'react-router';
 import { Prose } from '../components/Prose';
+import { useI18n } from '../i18n/use-i18n';
 import { useTitle } from '../lib/use-title';
 
 export function HowItWorksPage() {
-  useTitle('Nasıl çalışır');
+  useTitle('titles.howItWorks');
+  return useI18n().lang === 'en' ? <HowItWorksEn /> : <HowItWorksTr />;
+}
+
+function HowItWorksTr() {
   return (
     <Prose title="Nasıl çalışır?">
       <p>
@@ -54,6 +59,65 @@ export function HowItWorksPage() {
 
       <p>
         Ayrıntılar için <Link to="/gizlilik">gizlilik politikası</Link>na bakın.
+      </p>
+    </Prose>
+  );
+}
+
+function HowItWorksEn() {
+  return (
+    <Prose title="How does it work?">
+      <p>
+        ClipBoard lets you move text and files between your devices without an account. Everything
+        is encrypted in your browser; our server only stores meaningless bytes and cannot read the
+        content.
+      </p>
+
+      <h2>Sharing</h2>
+      <ul>
+        <li>
+          When you paste text and press <strong>Encrypt and share</strong>, your browser creates a
+          random key and encrypts the content with AES-256-GCM.
+        </li>
+        <li>
+          The <strong>link</strong> carries the key after the <code>#</code> sign. Browsers never
+          send that part to the server.
+        </li>
+        <li>
+          The <strong>short code</strong> (e.g. ABCD-EFGH) is easy to type but shorter. The server
+          only releases the content with a verification key derived from the code and locks code
+          access after 5 wrong attempts. Prefer the link or QR code for sensitive data.
+        </li>
+        <li>
+          If you add a <strong>password</strong>, both the link and the password are needed to open
+          it.
+        </li>
+        <li>
+          The content is deleted from the server when the chosen time runs out (at most 7 days), or
+          on first view if <strong>delete after first view</strong> is selected.
+        </li>
+      </ul>
+
+      <h2>Live room</h2>
+      <p>
+        Open a room and enter its code on your other device: everything you send on one appears
+        instantly on the others. The room code also determines the encryption key; the server sees
+        neither the code nor the content. A room keeps the last 50 items and is deleted after 24
+        hours of inactivity.
+      </p>
+
+      <h2>What the server sees</h2>
+      <ul>
+        <li>The encrypted content and its size, creation and deletion time.</li>
+        <li>The first 4 characters of a short code (its id) and hashes of access keys.</li>
+        <li>
+          To limit abuse, your IP address is kept in a short-lived counter; it is never stored with
+          the content or written to logs.
+        </li>
+      </ul>
+
+      <p>
+        See the <Link to="/gizlilik">privacy policy</Link> for details.
       </p>
     </Prose>
   );

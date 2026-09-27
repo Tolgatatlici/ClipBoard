@@ -5,6 +5,6 @@ export const SITE = {
   operator: (import.meta.env.VITE_OPERATOR_NAME as string | undefined) || '[İşletmeci adı]',
   contactEmail:
     (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) || 'iletisim@example.com',
-  /** Yasal metinlerin son güncellenme tarihi. */
-  legalUpdated: '27 Eylül 2026',
+  /** Yasal metinlerin son güncellenme tarihi (ISO). */
+  legalUpdated: '2026-09-27',
 };

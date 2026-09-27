@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
+import { useT } from '../i18n/use-i18n';
 
 export function QrCode({ value, size = 176 }: { value: string; size?: number }) {
+  const t = useT();
   const [svg, setSvg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export function QrCode({ value, size = 176 }: { value: string; size?: number }) 
       src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
       width={size}
       height={size}
-      alt="Paylaşım linkinin QR kodu"
+      alt={t('common.qrAlt')}
       className="rounded-lg bg-white p-2"
     />
   );

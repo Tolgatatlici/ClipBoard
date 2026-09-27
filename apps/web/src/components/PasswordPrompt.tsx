@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from 'react';
+import { useT } from '../i18n/use-i18n';
 
 interface Props {
   onSubmit(password: string): void;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export function PasswordPrompt({ onSubmit, busy = false }: Props) {
+  const t = useT();
   const inputId = useId();
   const [password, setPassword] = useState('');
 
@@ -17,7 +19,7 @@ export function PasswordPrompt({ onSubmit, busy = false }: Props) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <label htmlFor={inputId} className="label">
-        Parola
+        {t('common.password')}
       </label>
       <div className="flex gap-2">
         <input
@@ -30,7 +32,7 @@ export function PasswordPrompt({ onSubmit, busy = false }: Props) {
           autoFocus
         />
         <button type="submit" className="btn-primary shrink-0" disabled={!password || busy}>
-          {busy ? 'Çözülüyor…' : 'Aç'}
+          {busy ? t('clip.decrypting') : t('common.open')}
         </button>
       </div>
     </form>

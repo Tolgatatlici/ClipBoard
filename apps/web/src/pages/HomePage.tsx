@@ -6,10 +6,12 @@ import { ShareForm } from '../components/ShareForm';
 import { ShareResult } from '../components/ShareResult';
 import type { CreatedClip } from '../lib/clips';
 import { consumeSharedData, type SharedData } from '../lib/share-target';
+import { useT } from '../i18n/use-i18n';
 import { useTitle } from '../lib/use-title';
 
 export function HomePage() {
   useTitle();
+  const t = useT();
   const navigate = useNavigate();
   const [created, setCreated] = useState<CreatedClip | null>(null);
   const [shared, setShared] = useState<SharedData | null>(null);
@@ -50,9 +52,9 @@ export function HomePage() {
       <section className="card flex flex-col gap-3" aria-labelledby="receive-title">
         <div>
           <h2 id="receive-title" className="text-lg font-semibold">
-            Başka bir cihazdan mı paylaşıldı?
+            {t('home.receiveTitle')}
           </h2>
-          <p className="muted">Kodu girin, içerik bu cihazda çözülsün.</p>
+          <p className="muted">{t('home.receiveBody')}</p>
         </div>
         <CodeInput onSubmit={({ id, secret }) => navigate(`/c/${id}#s=${secret}`)} />
       </section>
@@ -60,16 +62,13 @@ export function HomePage() {
       <section className="card flex flex-col gap-4" aria-labelledby="room-card-title">
         <div>
           <h2 id="room-card-title" className="text-lg font-semibold">
-            Canlı oda
+            {t('home.roomTitle')}
           </h2>
-          <p className="muted">
-            Cihazlarınızı bir oda koduyla eşleştirin; birinde gönderdiğiniz her şey diğerlerinde
-            anında görünsün.
-          </p>
+          <p className="muted">{t('home.roomBody')}</p>
         </div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <Link to="/r" className="btn-primary self-start sm:self-auto">
-            Yeni oda oluştur
+            {t('home.newRoom')}
           </Link>
           <div className="flex-1">
             <RoomCodeInput onSubmit={(code) => navigate(`/r#${formatRoomCode(code)}`)} />
